@@ -4,12 +4,13 @@ Evaluation metrics for benchmarking model performance.
 
 import numpy as np
 import pandas as pd
+import datetime as dt 
 from scipy.stats import wasserstein_distance
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import acf, pacf
 
 
-def mean_square_error(real_data, generated_data):
+def mean_square_error(real_data, generated_data, ignore_nan = True):
     """
     Calculate Mean Square Error between real and generated data.
     
@@ -28,11 +29,18 @@ def mean_square_error(real_data, generated_data):
     # Ensure data has the same shape
     if real_data.shape != generated_data.shape:
         raise ValueError(f"Data shapes do not match: {real_data.shape} vs {generated_data.shape}")
-    
+    if ignore_nan:
+        len_real = len(real_data)
+        len_gen = len(generated_data)
+        real_nans = int(np.isnan(real_data).sum())
+        gen_nans = int(np.isnan(generated_data).sum())
+        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_nans}/{len_real} NaNs in real data")
+        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {gen_nans}/{len_gen} NaNs in generated data")    
+        return np.nanmean((real_data - generated_data) ** 2)
     return np.mean((real_data - generated_data) ** 2)
 
 
-def mean_absolute_error(real_data, generated_data):
+def mean_absolute_error(real_data, generated_data, ignore_nan = True):
     """
     Calculate Mean Absolute Error between real and generated data.
     
@@ -51,7 +59,14 @@ def mean_absolute_error(real_data, generated_data):
     # Ensure data has the same shape
     if real_data.shape != generated_data.shape:
         raise ValueError(f"Data shapes do not match: {real_data.shape} vs {generated_data.shape}")
-    
+    if ignore_nan:
+        len_real = len(real_data)
+        len_gen = len(generated_data)
+        real_nans = int(np.isnan(real_data).sum())
+        gen_nans = int(np.isnan(generated_data).sum())
+        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_nans}/{len_real} NaNs in real data")
+        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {gen_nans}/{len_gen} NaNs in generated data")    
+        return np.nanmean((real_data - generated_data) ** 2)    
     return np.mean(np.abs(real_data - generated_data))
 
 

@@ -38,12 +38,14 @@ if __name__ == "__main__":
     # Parameters for data filtering and processing
     TIME_STEPS = 1000 # Number of time steps to consider
     # STRIKES = list(np.linspace(0.8, 1.2, 8+1)) # Strikes as relative strikes
-    STRIKES = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]
+    # STRIKES = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]
+    STRIKES = [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15]
     # MATURITIES = list(np.linspace(1,120, 6+1)) # Maturities in days
-    MATURITIES = [1, 10, 20, 40, 60, 80, 120, 150]
+    # MATURITIES = [1, 10, 20, 40, 60, 80, 120, 150]
+    MATURITIES = [20, 40, 60, 120]
 
     # Parameters for PCA
-    N_COMPONENTS = 5
+    N_COMPONENTS = 10
 
     # Parameters for Training sets
     SEQUENCE_LENGTH = 10 # Length of sequences for training must be > TIME_STEPS
@@ -55,13 +57,15 @@ if __name__ == "__main__":
     TRAIN_LSTM_GAN = True
     TRAIN_TCN_GAN = True
     # TRAIN_WGAN = False
-    EPOCHS = 1000 
+    EPOCHS = 10
+    LEARNING_RATE = 1e-5
+    BETA_PARAM = 0.3
     GENERATE_LENGTH = 100
 
 
     STAGES_CONFIG = {
         # Stage 1: Get data
-        "GET_DATA": False,
+        "GET_DATA": True,
         # Stage 2: Process and clean data
         "CLEAN_DATA": True,
         # Stage 3: Filter data and generate DLVs
@@ -201,8 +205,8 @@ if __name__ == "__main__":
             
             # TODO: Play around with learning rates - Compile model
             lstm_gan.compile(
-                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5),
-                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
+                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
             )
             
             # Train model
@@ -225,8 +229,8 @@ if __name__ == "__main__":
             
             #TODO: Play around with learning rates - Compile model
             tcn_gan.compile(
-                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5),
-                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5)
+                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
+                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
             )
             
             # Train model
@@ -303,10 +307,10 @@ if __name__ == "__main__":
                 save_path=os.path.join(plots_dir, model_name.lower())
             )
         
-        # Store results
-        generated_sequences[model_name] = generated_log_dlvs
-        evaluation_results[model_name] = results
-        all_figures[model_name] = figures
+            # Store results
+            generated_sequences[model_name] = generated_log_dlvs
+            evaluation_results[model_name] = results
+            all_figures[model_name] = figures
     
     # Compare models
     comparison_df = summarize_evaluation_metrics(evaluation_results)

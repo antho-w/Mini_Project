@@ -4,6 +4,7 @@ Base model class for generative models.
 
 import os
 import numpy as np
+import datetime as dt
 import tensorflow as tf
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -176,7 +177,7 @@ class BaseModel(ABC):
         start_time = datetime.now()
         
         for epoch in range(epochs):
-            print(f"\nEpoch {epoch+1}/{epochs}")
+            print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:    Epoch {epoch+1}/{epochs}")
             
             # Training loop
             epoch_losses = []
@@ -227,7 +228,7 @@ class BaseModel(ABC):
             
             # Print progress
             if verbose > 0:
-                progress_str = f"loss: {avg_loss:.4f}"
+                progress_str = f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}    loss: {avg_loss:.4f}"
                 
                 for metric_name, values in self.history['metrics'].items():
                     if len(values) > 0 and not metric_name.startswith('val_'):
