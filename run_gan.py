@@ -23,16 +23,20 @@ from evaluation.visualization import create_evaluation_dashboard, summarize_eval
 if __name__ == "__main__":
     
     current_wd = os.getcwd()
-    DATA_DIR = os.path.join(current_wd, "output/data_{}".format(dt.datetime.now().strftime("%Y%m%d")))
+    folder_dir = os.path.join(current_wd, "output", dt.datetime.now().strftime("%Y%m%d_%H-%M-%S"))
+    DATA_DIR = os.path.join(folder_dir, "data")
+    LOG_DIR = os.path.join(folder_dir, "logs")
+
 
     # Create output directories if they don't exist
-    make_dir_if_not_exists(os.path.join(current_wd, "output"))
+    make_dir_if_not_exists(os.path.join(folder_dir))
     make_dir_if_not_exists(DATA_DIR)
 
     TICKER = "^NDX" # NASDAQ-100 Ticker
+    N_YEARS = 1
     END_DATE = dt.datetime.now().strftime("%Y-%m-%d")
     _end_dt = dt.datetime.strptime(END_DATE, "%Y-%m-%d")
-    START_DATE = ( _end_dt - relativedelta(years=5)).strftime("%Y-%m-%d")
+    START_DATE = ( _end_dt - relativedelta(years=N_YEARS)).strftime("%Y-%m-%d")
     SAVE_DATA = True
 
     # Parameters for data filtering and processing
@@ -95,15 +99,17 @@ if __name__ == "__main__":
         except Exception as e:
             print("Error occured when fetching underlying data:", e)
 
-        try:
-            data_fetcher.get_options_chain(save_data=SAVE_DATA)
-            print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Options chain data fetched for symbol {TICKER}")
-        except Exception as e:
-            print("Error occured when fetching options data:", e)
+        # try:
+        #     data_fetcher.get_options_chain(save_data=SAVE_DATA)
+        #     print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Options chain data fetched for symbol {TICKER}")
+        # except Exception as e:
+        #     print("Error occured when fetching options data:", e)
+
+
 
     if STAGES_CONFIG["CLEAN_DATA"]:
         if 'data_fetcher' not in locals():
-            underlying_data = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_stock_data.csv"))
+            # underlying_data = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_stock_data.csv"))
             options_chain_call = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_options_calls_all.csv"))
             options_chain_put = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_options_puts_all.csv"))
             options_chain_all = pd.concat([options_chain_call, options_chain_put], ignore_index=True)
