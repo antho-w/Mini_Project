@@ -207,7 +207,7 @@ if __name__ == "__main__":
                 log_dir=log_dir
             )
             
-            # TODO: Play around with learning rates - Compile model
+            # Compile model
             lstm_gan.compile(
                 generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
                 discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
@@ -231,7 +231,7 @@ if __name__ == "__main__":
                 log_dir=log_dir
             )
             
-            #TODO: Play around with learning rates - Compile model
+            # Compile model
             tcn_gan.compile(
                 generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
                 discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
