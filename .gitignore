@@ -2,14 +2,9 @@
 *.pyc
 __pycache__/
 
-# Ignore logs outputs
-full_monthly_data/
-
-# Files suffixes
-*.png
-*.log
-*.h5
-*.v2
+# Ignore logs and plotting outputs
+logs/
+plots/
 
 # Virtual environment (commonly named .venv)
 .venv/
