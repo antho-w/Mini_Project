@@ -5,6 +5,9 @@ __pycache__/
 # Ignore logs and plotting outputs
 logs/
 plots/
+full_monthly_data/
+
+#
 
 # Virtual environment (commonly named .venv)
 .venv/
