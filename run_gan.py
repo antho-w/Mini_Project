@@ -133,13 +133,17 @@ if __name__ == "__main__":
 
         print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Filtering data by strikes and maturities")
         data_processor.filter_by_strikes_and_maturities(STRIKES, MATURITIES)
+        
         print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Transforming data to DLVs using Dupire's method")
         dlvs = data_processor.compute_dlvs()
-
         log_dlv_series = data_processor.create_log_dlv_series(TIME_STEPS)
-
         print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Created log-DLV series with shape {log_dlv_series.shape}")
 
+        # Instead of using dlvs use market quoted implied vols
+        # from transforms import log_transform
+        # log_implied_vol_series = log_transform(data_processor.implied_vols)
+        # print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Created log-implied vol series with shape {log_implied_vol_series.shape}")
+ 
 
     if STAGES_CONFIG["APPLY_PCA"]:
         print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: Applying PCA to log-DLV series")
