@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt 
 from scipy.stats import wasserstein_distance
-import statsmodels.api as sm
-from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.tsa.stattools import acf
 
 
 def mean_square_error(real_data, generated_data, ignore_nan = True):
