@@ -53,6 +53,8 @@ class DataRetriever():
                 raise ValueError(f"No data found for symbol: {symbols}")
             
             self.underlying_data = df
+            df.index = pd.to_datetime(df.index, utc=True, errors='coerce')
+            df.index = df.index.date
             return df
         # If a list of tickers is provided
         elif isinstance(symbols, list):
@@ -77,75 +79,71 @@ class DataRetriever():
                 raise ValueError(f"No data found for any symbols in the provided list: {symbols}")
 
             df = pd.concat(frames, ignore_index=True, sort=False)
+            df.index = pd.to_datetime(df.index, utc=True, errors='coerce')
+            df.index = pd.to_datetime(df.index, utc=True, errors='coerce')
+            df.index = df.index.date()
             self.underlying_data = df
             print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: {df.shape[0]} stock row(s) fetched for symbol(s) {self.symbols}")
             return df
 
-    def get_options_chain(self, save_data: bool = False) -> Dict:
+    def get_options_chain(self, options_data: pd.DataFrame, save_data: bool = False) -> Dict:
         """
-        Yahoo Finance API can only get options chain as at now 
-        with chain data at a historical point in time not available.  
+        Given a full_yearly_data file create the option_chain attribute
         """
-
-        symbol = self.symbols
-        ticker = yf.Ticker(symbol)
-
         # Get available expiration dates
         try:
-            expirations = ticker.options
+            expiry_list = options_data.expiry.unique().tolist()
 
             chains = {}
-            print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    Fetching option chain for symbol {symbol}")
-            for expiry in expirations:
-                try:
-                    opt = ticker.option_chain(expiry)
-                    chains[expiry] = {
-                        'calls': opt.calls,
-                        'puts': opt.puts
-                    }
-                except Exception as e:
-                    print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    Could not fetch option chain for expiry {expiry} of symbol {symbol}: {e}", file=sys.stderr)
-                    continue
+            for expiry in expiry_list:
+                
+                expiry_mask = options_data['expiry'] == expiry
+                chains[expiry] = {
+                    'calls': options_data.loc[expiry_mask & (options_data['optionType'] == 'calls')],
+                    'puts': options_data.loc[expiry_mask & (options_data['optionType'] == 'puts')]
+                }
+
+            self.options_chain = chains
             
-            self.options_chains = chains
-
-            if save_data:
-                os.makedirs(self.data_dir, exist_ok=True)
-
-                calls_list = []
-                puts_list = []
-                for exp, data in chains.items():
-                    calls_df = data.get('calls')
-                    puts_df = data.get('puts')
-
-                    if calls_df is not None and not calls_df.empty:
-                        tmp_calls = calls_df.copy()
-                        tmp_calls['expiration'] = exp
-                        tmp_calls['symbol'] = symbol
-                        tmp_calls['type'] = 'calls'
-                        calls_list.append(tmp_calls)
-
-                    if puts_df is not None and not puts_df.empty:
-                        tmp_puts = puts_df.copy()
-                        tmp_puts['expiration'] = exp
-                        tmp_puts['symbol'] = symbol
-                        tmp_puts['type'] = 'puts'
-                        puts_list.append(tmp_puts)
-
-                if calls_list:
-                    all_calls = pd.concat(calls_list, ignore_index=True, sort=False)
-                    all_calls.to_csv(os.path.join(self.data_dir, f"{symbol}_options_calls_all.csv"), index=False)
-                    print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    {len(all_calls)} row(s) of call data saved for {symbol}")
-
-                if puts_list:
-                    all_puts = pd.concat(puts_list, ignore_index=True, sort=False)
-                    all_puts.to_csv(os.path.join(self.data_dir, f"{symbol}_options_puts_all.csv"), index=False)
-                    print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    {len(all_puts)} row(s) of put data saved for {symbol}")
-
-            return chains
-        
         except Exception as e:
-            raise ValueError(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    Could not fetch options expirations for symbol {symbol}: {e}")
+            raise(e)
+        #     if save_data:
+        #         os.makedirs(self.data_dir, exist_ok=True)
+
+        #         calls_list = []
+        #         puts_list = []
+        #         for exp, data in chains.items():
+        #             calls_df = data.get('calls')
+        #             puts_df = data.get('puts')
+
+        #             if calls_df is not None and not calls_df.empty:
+        #                 tmp_calls = calls_df.copy()
+        #                 tmp_calls['expiration'] = exp
+        #                 tmp_calls['symbol'] = symbol
+        #                 tmp_calls['type'] = 'calls'
+        #                 calls_list.append(tmp_calls)
+
+        #             if puts_df is not None and not puts_df.empty:
+        #                 tmp_puts = puts_df.copy()
+        #                 tmp_puts['expiration'] = exp
+        #                 tmp_puts['symbol'] = symbol
+        #                 tmp_puts['type'] = 'puts'
+        #                 puts_list.append(tmp_puts)
+
+        #         if calls_list:
+        #             all_calls = pd.concat(calls_list, ignore_index=True, sort=False)
+        #             all_calls.to_csv(os.path.join(self.data_dir, f"{symbol}_options_calls_all.csv"), index=False)
+        #             print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    {len(all_calls)} row(s) of call data saved for {symbol}")
+
+        #         if puts_list:
+        #             all_puts = pd.concat(puts_list, ignore_index=True, sort=False)
+        #             all_puts.to_csv(os.path.join(self.data_dir, f"{symbol}_options_puts_all.csv"), index=False)
+        #             print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    {len(all_puts)} row(s) of put data saved for {symbol}")
+
+        #     return chains
+        
+        # except Exception as e:
+        #     raise ValueError(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}:    Could not fetch options expirations for symbol {symbol}: {e}")
 
 
 DAYS_IN_YEAR = 365.0
@@ -153,8 +151,9 @@ MATURITY_TOL = 1e-6
 
 class DataProcessor():
 
-    def __init__(self, underlying_data: pd.DataFrame, options_chains: Dict):
+    def __init__(self, date, underlying_data: pd.DataFrame, options_chains: Dict):
         
+        self.date = date
         self.underlying_data = underlying_data
 
         self._validate_options_chains(options_chains)
@@ -170,7 +169,7 @@ class DataProcessor():
         self.volumes = None
         self.dlvs = None
 
-    def clean_and_process_data(self, price_column='lastPrice', implied_vol_column='impliedVolatility', volume_column='volume'):
+    def clean_and_process_data(self, price_column='close', implied_vol_column='bs_implied_vol', volume_column='volume'):
         """
         Process option chains to create structured option price/implied vol data.
         
@@ -188,7 +187,7 @@ class DataProcessor():
             (option_prices, implied_vols, strike_grid, maturity_grid)
         """
         # Get current price of underlying
-        current_price = self.underlying_data.iloc[-1]['Close']
+        current_price = self.underlying_data.loc[self.date.date()]['Close']
         
         # Extract unique strikes and maturities
         all_strikes = set()
@@ -227,7 +226,7 @@ class DataProcessor():
                 # Find the corresponding expiration date
                 for exp_date, chain in self.options_chains.items():
                     exp_datetime = dt.datetime.strptime(exp_date, '%Y-%m-%d')
-                    days_to_expiry = (exp_datetime - dt.datetime.now()).days
+                    days_to_expiry = (exp_datetime - self.date).days
                     maturity = max(1, days_to_expiry) / DAYS_IN_YEAR
 
                     if abs(maturity - T) < MATURITY_TOL:  # Close enough to be the same maturity

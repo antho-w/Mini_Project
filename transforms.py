@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.stats import norm
+from scipy.optimize import brentq
 
 def local_volatility_dupire(implied_vols, S, K_grid, T_grid, r):
     """
@@ -201,3 +203,86 @@ def log_transform(data, epsilon=1e-10):
         Log-transformed data
     """
     return np.log(data + epsilon)
+
+def bs_price(S, K, T, r, sigma, option_type='call'):
+    """
+    Calculate Black-Scholes option price.
+    
+    Parameters:
+    -----------
+    S : float
+        Underlying asset price
+    K : float
+        Strike price
+    T : float
+        Time to maturity in years
+    r : float
+        Risk-free interest rate (annualized)
+    sigma : float
+        Implied volatility (annualized)
+    option_type : str
+        'call' or 'put'
+        
+    Returns:
+    --------
+    float
+        Option price
+    """
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    if option_type == 'call':
+        price = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+    else:
+        price = K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+        
+    return price
+
+def implied_volatility(price, S, K, T, r, option_type='call', tol=1e-8, max_iterations=1000):
+    """
+    Calculate implied volatility using Brent's method.
+    
+    Parameters:
+    -----------
+    price : float
+        Market price of the option
+    S : float
+        Underlying asset price
+    K : float
+        Strike price
+    T : float
+        Time to maturity in years
+    r : float
+        Risk-free interest rate (annualized)
+    option_type : str
+        'call' or 'put'
+    tol : float
+        Tolerance for solving the equation
+    max_iterations : int
+        Maximum number of iterations
+        
+    Returns:
+    --------
+    float
+        Implied volatility
+    """
+    def objective(sigma):
+        return bs_price(S, K, T, r, sigma, option_type) - price
+    
+    # Handle edge cases
+    if price <= 0:
+        return 0.0
+    
+    # Set bounds for Brent's method
+    sigma_low = 0.001
+    sigma_high = 5.0
+    
+    try:
+        # Use Brent's method to find the implied volatility
+        sigma = brentq(objective, sigma_low, sigma_high, 
+                       xtol=tol, maxiter=max_iterations)
+        return sigma
+    except ValueError:
+        # If Brent's method fails, use a simple approximation
+        # This is a crude approximation and should be improved
+        return 0.2  # Default to 20% volatility

@@ -2,7 +2,7 @@ import os
 import datetime as dt
 import pandas as pd
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 from dateutil.relativedelta import relativedelta
 
 from utils.helpers import (
@@ -23,7 +23,7 @@ from evaluation.visualization import create_evaluation_dashboard, summarize_eval
 if __name__ == "__main__":
     
     current_wd = os.getcwd()
-    folder_dir = os.path.join(current_wd, "output", dt.datetime.now().strftime("%Y%m%d_%H-%M-%S"))
+    folder_dir = os.path.join(current_wd, "output", dt.datetime.now().strftime("%Y%m%d_%H%M%S"))
     DATA_DIR = os.path.join(folder_dir, "data")
     LOG_DIR = os.path.join(folder_dir, "logs")
 
@@ -33,6 +33,7 @@ if __name__ == "__main__":
     make_dir_if_not_exists(DATA_DIR)
 
     TICKER = "^NDX" # NASDAQ-100 Ticker
+    OPT_DATA_DIR = os.path.join(current_wd, "raw_data/full_yearly_data")
     N_YEARS = 1
     END_DATE = dt.datetime.now().strftime("%Y-%m-%d")
     _end_dt = dt.datetime.strptime(END_DATE, "%Y-%m-%d")
@@ -69,22 +70,20 @@ if __name__ == "__main__":
 
     STAGES_CONFIG = {
         # Stage 1: Get data
-        "GET_DATA": True,
-        # Stage 2: Process and clean data
-        "CLEAN_DATA": True,
-        # Stage 3: Filter data and generate DLVs
+        "READ_AND_CLEAN_DATA": True,
+        # Stage 2: Filter data and generate DLVs
         "TRANSFORM_DATA": True,
-        # Stage 4: Apply PCA
+        # Stage 3: Apply PCA
         "APPLY_PCA": True,
-        # Stage 5: Prepare GAN datasets
+        # Stage 4: Prepare GAN datasets
         "PREPARE_DATA": True,
-        # Stage 6: Train GAN
+        # Stage 5: Train GAN
         "TRAIN_GAN": True,
-        # Stage 7: Simulate and evaluate
+        # Stage 6: Simulate and evaluate
         "SIMULATE_AND_EVALUATE": True
     }
     
-    if STAGES_CONFIG["GET_DATA"]:
+    if STAGES_CONFIG["READ_AND_CLEAN_DATA"]:
         print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Retreiving data for {TICKER} from {START_DATE} to {END_DATE}")
         data_fetcher = DataRetriever(DATA_DIR, TICKER, 
                                     start_date=dt.datetime.strptime(START_DATE, "%Y-%m-%d"), 
@@ -99,26 +98,37 @@ if __name__ == "__main__":
         except Exception as e:
             print("Error occured when fetching underlying data:", e)
 
+        print(f"Reading options data from {OPT_DATA_DIR}")
+
+        date_range = pd.bdate_range(start=START_DATE, end=END_DATE)
+
+        curr_year = pd.to_datetime(START_DATE).year
+        year_file_data = pd.read_csv(os.path.join(OPT_DATA_DIR, f"{curr_year}.csv"))
+        for date in date_range:
+            
+            if date.year != curr_year:
+                curr_year = date.year
+                year_file_data = pd.read_csv(os.path.join(OPT_DATA_DIR, f"{curr_year}.csv"))
+                
+            mask = pd.to_datetime(year_file_data['obs_date']).dt.date == date.date()
+            options_chain_df = year_file_data.loc[mask]
+
+            if options_chain_df.empty:
+                print(f"No options data for date {date} found in {curr_year}.csv")
+                continue
+            else:
+                data_fetcher.get_options_chain(options_chain_df, SAVE_DATA)
+                print(f"Finished creating options chain for date: {date}")
+
+        
         # try:
-        #     data_fetcher.get_options_chain(save_data=SAVE_DATA)
+        #     data_fetcher.get_options_chain(save_data=SAVE_DATA, )
         #     print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Options chain data fetched for symbol {TICKER}")
         # except Exception as e:
         #     print("Error occured when fetching options data:", e)
 
-
-
-    if STAGES_CONFIG["CLEAN_DATA"]:
-        if 'data_fetcher' not in locals():
-            # underlying_data = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_stock_data.csv"))
-            options_chain_call = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_options_calls_all.csv"))
-            options_chain_put = pd.read_csv(os.path.join(DATA_DIR, f"{TICKER}_options_puts_all.csv"))
-            options_chain_all = pd.concat([options_chain_call, options_chain_put], ignore_index=True)
-            options_chain = DataProcessor.load_options_chain(options_chain_all)
-        else:
-            underlying_data = data_fetcher.underlying_data
-            options_chain = data_fetcher.options_chains
-        data_processor = DataProcessor(underlying_data, options_chain)
-        option_prices, strikes, maturities, implied_vols, volume_array, option_types = data_processor.clean_and_process_data()
+            data_processor = DataProcessor(date, data_fetcher.underlying_data, data_fetcher.options_chain)
+            option_prices, strikes, maturities, implied_vols, volume_array, option_types = data_processor.clean_and_process_data()
 
         # Transform prices and implied vols to DataFrames and save as CSV
         # Rows are relative strikes, columns are maturities in days
@@ -134,9 +144,9 @@ if __name__ == "__main__":
     
     if STAGES_CONFIG["TRANSFORM_DATA"]:
         # Uses STRIKES and MATURITIES to filter from the dataset
-        # and transforms them into DLVs using method described in the paper
-        # Determine the N most liquid strikes (sum across columns -> per-row sums)
 
+        if 'data_processor' not in locals():
+            pass
         print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Filtering data by strikes and maturities")
         data_processor.filter_by_strikes_and_maturities(STRIKES, MATURITIES)
         print(f"{dt.datetime.now().strftime(format = '%Y-%m-%d %H:%M:%S')}: Transforming data to DLVs using Dupire's method")
