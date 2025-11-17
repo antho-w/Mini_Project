@@ -5,7 +5,6 @@ __pycache__/
 # Ignore logs and plotting outputs
 logs/
 plots/
-raw_data/full_yearly_data/
 
 #
 
