@@ -200,7 +200,7 @@ class DimensionReducer:
         
         # Add threshold line
         ax2.axhline(y=0.95, color='r', linestyle='--', alpha=0.7)
-        ax2.text(len(components) * 0.7, 0.96, '95% Threshold', color='r')
+        ax2.text(len(components) * 0.7, 0.955, '95% Threshold', color='r')
         
         fig.tight_layout()
         return fig, ax1, ax2

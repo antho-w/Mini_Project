@@ -4,10 +4,12 @@ Evaluation metrics for benchmarking model performance.
 
 import numpy as np
 import pandas as pd
-import datetime as dt 
+import datetime as dt
+import logging
 from scipy.stats import wasserstein_distance
 from statsmodels.tsa.stattools import acf
 
+logger = logging.getLogger(__name__)
 
 def mean_square_error(real_data, generated_data, ignore_nan = True):
     """
@@ -31,7 +33,7 @@ def mean_square_error(real_data, generated_data, ignore_nan = True):
     if ignore_nan:
         real_data_nans = int(np.isnan(real_data).sum())
         gen_data_nans = int(np.isnan(generated_data).sum())
-        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_data_nans} NaNs in real data and {gen_data_nans} NaNs in generated data")
+        logger.debug(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_data_nans} NaNs in real data and {gen_data_nans} NaNs in generated data")
         return np.nanmean((real_data - generated_data) ** 2)
     return np.mean((real_data - generated_data) ** 2)
 
@@ -58,7 +60,7 @@ def mean_absolute_error(real_data, generated_data, ignore_nan = True):
     if ignore_nan:
         real_data_nans = int(np.isnan(real_data).sum())
         gen_data_nans = int(np.isnan(generated_data).sum())
-        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_data_nans} NaNs in real data and {gen_data_nans} NaNs in generated data")
+        logger.debug(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_data_nans} NaNs in real data and {gen_data_nans} NaNs in generated data")
         return np.nanmean((real_data - generated_data) ** 2)   
     return np.mean(np.abs(real_data - generated_data))
 
@@ -368,7 +370,7 @@ def check_no_arbitrage(IVs):
     """
     results = {}
     
-    # For DLVs, the no-arbitrage condition is non-negativity
+    # For IVs, the no-arbitrage condition is non-negativity
     violation_mask = IVs <= 0
     
     # Calculate overall violation rate
@@ -469,7 +471,7 @@ def summarize_evaluation(results):
     summary['Cross-Correlation MSE'] = results['corr_mse']
     summary['Volatility ACF MSE'] = results['vol_mse']
     
-    if 'violation_rate' in results:
-        summary['Arbitrage Violation Rate'] = results['violation_rate']
+    # if 'violation_rate' in results:
+    #     summary['Arbitrage Violation Rate'] = results['violation_rate']
     
     return pd.DataFrame(summary, index=['Value']).T 

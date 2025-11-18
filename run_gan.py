@@ -22,7 +22,7 @@ from model_classes.dim_reducer import DimensionReducer
 from model_classes.lstm_gan import LSTMGAN
 from model_classes.tcn_gan import TCNGAN
 
-from transforms import log_transform, interpolate_implied_vol_surface
+from transforms import log_transform
 
 from evaluation.metrics import evaluate_model
 from evaluation.visualization import create_evaluation_dashboard, summarize_evaluation_metrics, plot_gan_losses
@@ -75,13 +75,12 @@ if __name__ == "__main__":
     # Parameters for Training sets
     SEQUENCE_LENGTH = 100
     BATCH_SIZE = 64
-    TRAIN_RATIO = 0.8
+    TRAIN_RATIO = 0.85
 
     # Parameters for GAN
     NOISE_DIM = 16
     TRAIN_LSTM_GAN = True
-    TRAIN_TCN_GAN = False
-    # TRAIN_WGAN = False
+    TRAIN_TCN_GAN = True
     EPOCHS = 100
     LEARNING_RATE = 1e-4
     BETA_PARAM = 0.3
@@ -337,8 +336,14 @@ if __name__ == "__main__":
             history = lstm_gan.train(train_dataset, validation_dataset=val_dataset, epochs=EPOCHS, verbose=1)
             models['LSTM-GAN'] = lstm_gan
             
+            # Save model to DATA_DIR
+            model_save_path = os.path.join(DATA_DIR, 'lstm_gan_model')
+            lstm_gan.save(model_save_path)
+            logger.info(f"LSTM-GAN model saved to {model_save_path}")
+            
             # Plot discriminator and generator losses
-            plot_gan_losses(lstm_gan.history, 'LSTM-GAN', PLOT_DIR)
+            plot_gan_losses(history, 'LSTM-GAN', PLOT_DIR)
+
 
         if TRAIN_TCN_GAN:
             logger.info(f"Training TCN-GAN model with {EPOCHS} epochs")
@@ -364,10 +369,85 @@ if __name__ == "__main__":
             history = tcn_gan.train(train_dataset, validation_dataset=val_dataset, epochs=EPOCHS, verbose=1)
             models['TCN-GAN'] = tcn_gan
             
+            # Save model to DATA_DIR
+            model_save_path = os.path.join(DATA_DIR, 'tcn_gan_model')
+            tcn_gan.save(model_save_path)
+            logger.info(f"TCN-GAN model saved to {model_save_path}")
+            
             # Plot discriminator and generator losses
-            plot_gan_losses(tcn_gan.history, 'TCN-GAN', PLOT_DIR)
+            plot_gan_losses(history, 'TCN-GAN', PLOT_DIR)
+            plt.savefig(os.path.join(PLOT_DIR, "tcn_gan_losses.png"))
+            plt.close()
+
+    else:
+        # Load models from DATA_DIR if they exist
+        logger.info(f"Loading models from {DATA_DIR}")
+        models = {}
         
-        pass
+        # Define state, noise, and output dimensions (needed for model initialization)
+        state_dim = (None, SEQUENCE_LENGTH, N_COMPONENTS)
+        noise_dim = NOISE_DIM
+        output_dim = N_COMPONENTS
+        
+        # Load LSTM-GAN if it exists
+        lstm_gan_path = os.path.join(DATA_DIR, 'lstm_gan_model')
+        if os.path.exists(lstm_gan_path):
+            try:
+                logger.info(f"Loading LSTM-GAN from {lstm_gan_path}")
+                lstm_gan = LSTMGAN(
+                    state_dim=state_dim,
+                    noise_dim=noise_dim,
+                    output_dim=output_dim,
+                    generator_units=[64, 128],
+                    discriminator_units=[128, 64],
+                    use_pca=True,
+                    n_pca_components=output_dim,
+                    log_dir=os.path.join(current_wd, "logs")
+                )
+                lstm_gan.load(lstm_gan_path)
+                # Compile with dummy optimizers (needed for model to work, but not used for inference)
+                lstm_gan.compile(
+                    generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
+                    discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
+                )
+                models['LSTM-GAN'] = lstm_gan
+                logger.info("LSTM-GAN loaded successfully")
+            except Exception as e:
+                logger.error(f"Failed to load LSTM-GAN: {e}")
+        else:
+            logger.warning(f"LSTM-GAN model not found at {lstm_gan_path}")
+        
+        # Load TCN-GAN if it exists
+        tcn_gan_path = os.path.join(DATA_DIR, 'tcn_gan_model')
+        if os.path.exists(tcn_gan_path):
+            try:
+                logger.info(f"Loading TCN-GAN from {tcn_gan_path}")
+                tcn_gan = TCNGAN(
+                    state_dim=state_dim,
+                    noise_dim=noise_dim,
+                    output_dim=output_dim,
+                    generator_filters=[64, 128, 64],
+                    discriminator_filters=[64, 128, 64],
+                    kernel_size=3,
+                    use_pca=True,
+                    n_pca_components=output_dim,
+                    log_dir=os.path.join(current_wd, "logs")
+                )
+                tcn_gan.load(tcn_gan_path)
+                # Compile with dummy optimizers (needed for model to work, but not used for inference)
+                tcn_gan.compile(
+                    generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
+                    discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
+                )
+                models['TCN-GAN'] = tcn_gan
+                logger.info("TCN-GAN loaded successfully")
+            except Exception as e:
+                logger.error(f"Failed to load TCN-GAN: {e}")
+        else:
+            logger.warning(f"TCN-GAN model not found at {tcn_gan_path}")
+        
+        if not models:
+            logger.warning("No models were loaded. Make sure models exist in DATA_DIR or set TRAIN_GAN=True")
 
     if STAGES_CONFIG["SIMULATE_AND_EVALUATE"] and models:
         logger.info(f"Generating synthetic data and evaluating models")

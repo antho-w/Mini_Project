@@ -376,6 +376,9 @@ class TCNGAN(BaseModel):
         next_state_reshaped = tf.reshape(next_state, [-1, self.output_dim])
 
         # Train discriminator
+        # Ensure discriminator is trainable
+        self.discriminator.trainable = True
+        
         with tf.GradientTape() as disc_tape:
             # Generate fake data
             noise = tf.random.normal([batch_size, self.noise_dim])
@@ -392,11 +395,20 @@ class TCNGAN(BaseModel):
         
         # Apply discriminator gradients
         disc_gradients = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
-        self.discriminator_optimizer.apply_gradients(
-            zip(disc_gradients, self.discriminator.trainable_variables)
-        )
+        
+        # Filter out None gradients and ensure we have valid gradients
+        disc_grads_and_vars = [
+            (grad, var) for grad, var in zip(disc_gradients, self.discriminator.trainable_variables)
+            if grad is not None
+        ]
+        
+        if disc_grads_and_vars:
+            self.discriminator_optimizer.apply_gradients(disc_grads_and_vars)
         
         # Train the generator
+        # Freeze discriminator for generator training
+        self.discriminator.trainable = False
+        
         with tf.GradientTape() as gen_tape:
             # Generate fake data
             generated_data = self.generator([noise, state], training=True)
@@ -410,9 +422,15 @@ class TCNGAN(BaseModel):
         
         # Apply generator gradients
         gen_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
-        self.generator_optimizer.apply_gradients(
-            zip(gen_gradients, self.generator.trainable_variables)
-        )
+        
+        # Filter out None gradients and ensure we have valid gradients
+        gen_grads_and_vars = [
+            (grad, var) for grad, var in zip(gen_gradients, self.generator.trainable_variables)
+            if grad is not None
+        ]
+        
+        if gen_grads_and_vars:
+            self.generator_optimizer.apply_gradients(gen_grads_and_vars)
         
         # Calculate accuracy metrics
         disc_real_acc = tf.reduce_mean(tf.cast(real_output > 0.5, tf.float32))
@@ -553,4 +571,66 @@ class TCNGAN(BaseModel):
                 # Just shift the initial state without using generated data
                 current_state = np.roll(initial_state, shift=-1, axis=1)
         
-        return np.array(generated_sequence) 
+        return np.array(generated_sequence)
+    
+    def save(self, filepath):
+        """
+        Save the GAN model (generator and discriminator) as .h5 files.
+        
+        Parameters:
+        -----------
+        filepath : str
+            Base path to save the model components (without extension).
+            Generator will be saved as {filepath}_generator.h5
+            Discriminator will be saved as {filepath}_discriminator.h5
+        """
+        import os
+        
+        # Ensure filepath doesn't have .h5 extension
+        if filepath.endswith('.h5'):
+            filepath = filepath[:-3]
+        
+        generator_path = f"{filepath}_generator.h5"
+        discriminator_path = f"{filepath}_discriminator.h5"
+        
+        self.generator.save(generator_path)
+        self.discriminator.save(discriminator_path)
+        
+        print(f"GAN model saved: {generator_path}, {discriminator_path}")
+    
+    def load(self, filepath):
+        """
+        Load the GAN model (generator and discriminator) from .h5 files.
+        
+        Parameters:
+        -----------
+        filepath : str
+            Base path to load the model components from (without extension).
+            Generator will be loaded from {filepath}_generator.h5
+            Discriminator will be loaded from {filepath}_discriminator.h5
+            
+        Returns:
+        --------
+        self
+            Returns self for method chaining
+        """
+        import os
+        
+        # Ensure filepath doesn't have .h5 extension
+        if filepath.endswith('.h5'):
+            filepath = filepath[:-3]
+        
+        generator_path = f"{filepath}_generator.h5"
+        discriminator_path = f"{filepath}_discriminator.h5"
+        
+        if not os.path.exists(generator_path) or not os.path.exists(discriminator_path):
+            raise FileNotFoundError(f"Model files not found: {generator_path} or {discriminator_path}")
+        
+        self.generator = tf.keras.models.load_model(generator_path)
+        self.discriminator = tf.keras.models.load_model(discriminator_path)
+        
+        # Rebuild the complete model
+        self.model = self.build_model()
+        
+        print(f"GAN model loaded: {generator_path}, {discriminator_path}")
+        return self 

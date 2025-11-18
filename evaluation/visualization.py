@@ -682,7 +682,7 @@ def summarize_evaluation_metrics(evaluation_results_dict):
         }
         
         # Handle optional metric separately
-        metrics['Arbitrage Violation Rate'] = get_metric('violation_rate')
+        # metrics['Arbitrage Violation Rate'] = get_metric('violation_rate')
         
         all_metrics[model_name] = metrics # Store metrics under model name
     
