@@ -73,17 +73,18 @@ if __name__ == "__main__":
     N_COMPONENTS = 5
 
     # Parameters for Training sets
-    SEQUENCE_LENGTH = 100
+    SEQUENCE_LENGTH = 1000
     BATCH_SIZE = 64
     TRAIN_RATIO = 0.85
 
     # Parameters for GAN
-    NOISE_DIM = 16
+    NOISE_DIM = 32
     TRAIN_LSTM_GAN = True
-    TRAIN_TCN_GAN = True
+    TRAIN_TCN_GAN = False
     EPOCHS = 100
-    LEARNING_RATE = 1e-4
-    BETA_PARAM = 0.3
+    LEARNING_RATE_DES = 3e-4
+    LEARNING_RATE_GEN = 1e-4
+    BETA_PARAM = 0.3 # 0.3
     GENERATE_LENGTH = 100
 
 
@@ -309,9 +310,6 @@ if __name__ == "__main__":
         
         models = {}
 
-        make_dir_if_not_exists(os.path.join(current_wd, "logs"))
-        log_dir = os.path.join(current_wd, "logs", dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-
         if TRAIN_LSTM_GAN:
             logger.info(f"Training LSTM-GAN model with {EPOCHS} epochs")
 
@@ -323,13 +321,13 @@ if __name__ == "__main__":
                 discriminator_units=[128, 64],
                 use_pca=True,
                 n_pca_components=output_dim,
-                log_dir=log_dir
+                log_dir=LOG_DIR
             )
             
             # Compile model
             lstm_gan.compile(
-                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
-                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
+                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE_GEN, beta_1=BETA_PARAM),
+                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE_DES, beta_1=BETA_PARAM)
             )
             
             # Train model
@@ -356,7 +354,7 @@ if __name__ == "__main__":
                 kernel_size=3,
                 use_pca=True,
                 n_pca_components=output_dim,
-                log_dir=log_dir
+                log_dir=LOG_DIR
             )
             
             # Compile model
@@ -402,7 +400,7 @@ if __name__ == "__main__":
                     discriminator_units=[128, 64],
                     use_pca=True,
                     n_pca_components=output_dim,
-                    log_dir=os.path.join(current_wd, "logs")
+                    log_dir=LOG_DIR
                 )
                 lstm_gan.load(lstm_gan_path)
                 # Compile with dummy optimizers (needed for model to work, but not used for inference)
@@ -431,7 +429,7 @@ if __name__ == "__main__":
                     kernel_size=3,
                     use_pca=True,
                     n_pca_components=output_dim,
-                    log_dir=os.path.join(current_wd, "logs")
+                    log_dir=LOG_DIR
                 )
                 tcn_gan.load(tcn_gan_path)
                 # Compile with dummy optimizers (needed for model to work, but not used for inference)

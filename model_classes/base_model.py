@@ -16,7 +16,7 @@ class BaseModel(ABC):
     Abstract base class for all generative models.
     """
     
-    def __init__(self, name, input_dim, output_dim, log_dir='logs'):
+    def __init__(self, name, input_dim, output_dim, log_dir):
         """
         Initialize BaseModel.
         
@@ -27,7 +27,7 @@ class BaseModel(ABC):
         input_dim : int or tuple
             Dimension of input data (noise + state)
         output_dim : int or tuple
-            Dimension of output data (DLVs)
+            Dimension of output data
         log_dir : str
             Directory for saving logs and model checkpoints
         """
@@ -36,7 +36,7 @@ class BaseModel(ABC):
         self.output_dim = output_dim
         
         # Create log directory
-        self.log_dir = os.path.join(log_dir, self.name, datetime.now().strftime('%Y%m%d-%H%M%S'))
+        self.log_dir = os.path.join(log_dir, self.name)
         make_dir_if_not_exists(self.log_dir)
         
         # Initialize model components
@@ -182,46 +182,86 @@ class BaseModel(ABC):
             # Training loop
             epoch_losses = []
             epoch_metrics = {metric.__name__: [] for metric in self.metrics}
+            # Track all additional metrics returned from train_step (for GAN models)
+            additional_metrics = {}
             
             for batch_data in train_dataset:
                 step_results = self.train_step(batch_data)
                 epoch_losses.append(step_results['loss'])
                 
-                # Update metrics
+                # Update metrics from self.metrics list
                 for metric in self.metrics:
                     metric_name = metric.__name__
                     if metric_name in step_results:
                         epoch_metrics[metric_name].append(step_results[metric_name])
+                
+                # Track additional metrics returned from train_step (e.g., gen_loss, disc_loss for GANs)
+                for key, value in step_results.items():
+                    if key != 'loss' and key not in epoch_metrics:
+                        if key not in additional_metrics:
+                            additional_metrics[key] = []
+                        # Convert tensor to numpy if needed
+                        if hasattr(value, 'numpy'):
+                            additional_metrics[key].append(value.numpy())
+                        else:
+                            additional_metrics[key].append(value)
             
             # Calculate average loss and metrics for the epoch
             avg_loss = np.mean(epoch_losses)
             self.history['train_loss'].append(avg_loss)
             
+            # Update metrics from self.metrics
             for metric_name, values in epoch_metrics.items():
                 if values:
                     avg_metric = np.mean(values)
-                    self.history['metrics'][metric_name].append(avg_metric)
+                    self.history['metrics'].setdefault(metric_name, []).append(avg_metric)
+            
+            # Update additional metrics (GAN-specific metrics)
+            for metric_name, values in additional_metrics.items():
+                if values:
+                    avg_metric = np.mean(values)
+                    self.history['metrics'].setdefault(metric_name, []).append(avg_metric)
             
             # Validation loop
             if validation_dataset is not None:
                 val_losses = []
                 val_metrics = {metric.__name__: [] for metric in self.metrics}
+                # Track all additional metrics returned from validate_step (for GAN models)
+                val_additional_metrics = {}
                 
                 for batch_data in validation_dataset:
                     val_results = self.validate_step(batch_data)
                     val_losses.append(val_results['loss'])
                     
-                    # Update metrics
+                    # Update metrics from self.metrics list
                     for metric in self.metrics:
                         metric_name = metric.__name__
                         if metric_name in val_results:
                             val_metrics[metric_name].append(val_results[metric_name])
+                    
+                    # Track additional metrics returned from validate_step (e.g., gen_loss, disc_loss for GANs)
+                    for key, value in val_results.items():
+                        if key != 'loss' and key not in val_metrics:
+                            if key not in val_additional_metrics:
+                                val_additional_metrics[key] = []
+                            # Convert tensor to numpy if needed
+                            if hasattr(value, 'numpy'):
+                                val_additional_metrics[key].append(value.numpy())
+                            else:
+                                val_additional_metrics[key].append(value)
                 
                 # Calculate average validation loss and metrics
                 avg_val_loss = np.mean(val_losses)
                 self.history['val_loss'].append(avg_val_loss)
                 
+                # Update metrics from self.metrics
                 for metric_name, values in val_metrics.items():
+                    if values:
+                        avg_metric = np.mean(values)
+                        self.history['metrics'].setdefault(f'val_{metric_name}', []).append(avg_metric)
+                
+                # Update additional validation metrics (GAN-specific metrics)
+                for metric_name, values in val_additional_metrics.items():
                     if values:
                         avg_metric = np.mean(values)
                         self.history['metrics'].setdefault(f'val_{metric_name}', []).append(avg_metric)
