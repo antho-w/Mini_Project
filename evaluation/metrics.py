@@ -29,12 +29,9 @@ def mean_square_error(real_data, generated_data, ignore_nan = True):
     if real_data.shape != generated_data.shape:
         raise ValueError(f"Data shapes do not match: {real_data.shape} vs {generated_data.shape}")
     if ignore_nan:
-        len_real = len(real_data)
-        len_gen = len(generated_data)
-        real_nans = int(np.isnan(real_data).sum())
-        gen_nans = int(np.isnan(generated_data).sum())
-        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_nans}/{len_real} NaNs in real data")
-        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {gen_nans}/{len_gen} NaNs in generated data")    
+        real_data_nans = int(np.isnan(real_data).sum())
+        gen_data_nans = int(np.isnan(generated_data).sum())
+        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_data_nans} NaNs in real data and {gen_data_nans} NaNs in generated data")
         return np.nanmean((real_data - generated_data) ** 2)
     return np.mean((real_data - generated_data) ** 2)
 
@@ -55,17 +52,14 @@ def mean_absolute_error(real_data, generated_data, ignore_nan = True):
     float
         Mean Absolute Error
     """
-    # Ensure data has the same shape
+
     if real_data.shape != generated_data.shape:
         raise ValueError(f"Data shapes do not match: {real_data.shape} vs {generated_data.shape}")
     if ignore_nan:
-        len_real = len(real_data)
-        len_gen = len(generated_data)
-        real_nans = int(np.isnan(real_data).sum())
-        gen_nans = int(np.isnan(generated_data).sum())
-        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_nans}/{len_real} NaNs in real data")
-        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {gen_nans}/{len_gen} NaNs in generated data")    
-        return np.nanmean((real_data - generated_data) ** 2)    
+        real_data_nans = int(np.isnan(real_data).sum())
+        gen_data_nans = int(np.isnan(generated_data).sum())
+        print(f"{dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}: There are {real_data_nans} NaNs in real data and {gen_data_nans} NaNs in generated data")
+        return np.nanmean((real_data - generated_data) ** 2)   
     return np.mean(np.abs(real_data - generated_data))
 
 
@@ -357,15 +351,15 @@ def volatility_clustering_comparison(real_data, generated_data, window_size=10):
     
     return results
 
-
-def check_no_arbitrage(dlvs):
+# TODO: Implement no-arbitrage check for IVs
+def check_no_arbitrage(IVs):
     """
-    Check if DLVs satisfy no-arbitrage conditions.
+    Check if IVs satisfy no-arbitrage conditions.
     
     Parameters:
     -----------
-    dlvs : ndarray
-        Discrete local volatility surface with shape (n_samples, n_strikes, n_maturities)
+    IVs : ndarray
+        Implied volatility surface with shape (n_samples, n_strikes, n_maturities)
         
     Returns:
     --------
@@ -375,10 +369,10 @@ def check_no_arbitrage(dlvs):
     results = {}
     
     # For DLVs, the no-arbitrage condition is non-negativity
-    violation_mask = dlvs <= 0
+    violation_mask = IVs <= 0
     
     # Calculate overall violation rate
-    total_elements = np.prod(dlvs.shape)
+    total_elements = np.prod(IVs.shape)
     num_violations = np.sum(violation_mask)
     violation_rate = num_violations / total_elements
     
@@ -389,7 +383,7 @@ def check_no_arbitrage(dlvs):
     return results
 
 
-def evaluate_model(real_data, generated_data, is_dlv_surface=False, n_strikes=None, n_maturities=None):
+def evaluate_model(real_data, generated_data, is_implied_vol_surface=False, n_strikes=None, n_maturities=None):
     """
     Comprehensive evaluation of a model comparing real and generated data.
     
@@ -399,12 +393,12 @@ def evaluate_model(real_data, generated_data, is_dlv_surface=False, n_strikes=No
         Real data
     generated_data : ndarray
         Generated data
-    is_dlv_surface : bool
-        Whether the data represents a DLV surface
+    is_implied_vol_surface : bool
+        Whether the data represents a IV surface
     n_strikes : int, optional
-        Number of strikes if is_dlv_surface is True
+        Number of strikes if is_implied_vol_surface is True
     n_maturities : int, optional
-        Number of maturities if is_dlv_surface is True
+        Number of maturities if is_implied_vol_surface is True
         
     Returns:
     --------
@@ -413,16 +407,13 @@ def evaluate_model(real_data, generated_data, is_dlv_surface=False, n_strikes=No
     """
     results = {}
     
-    # Reshape data if it's a DLV surface
-    if is_dlv_surface:
+    # Reshape data if it's a IV surface
+    if is_implied_vol_surface:
         if n_strikes is None or n_maturities is None:
-            raise ValueError("n_strikes and n_maturities must be provided if is_dlv_surface is True")
+            raise ValueError("n_strikes and n_maturities must be provided if is_implied_vol_surface is True")
         
         real_data_reshaped = real_data.reshape(real_data.shape[0], -1)
         generated_data_reshaped = generated_data.reshape(generated_data.shape[0], -1)
-    else:
-        real_data_reshaped = real_data
-        generated_data_reshaped = generated_data
     
     # Basic error metrics
     results['mse'] = mean_square_error(real_data_reshaped, generated_data_reshaped)
@@ -443,9 +434,11 @@ def evaluate_model(real_data, generated_data, is_dlv_surface=False, n_strikes=No
     results.update(vol_results)
     
     # No-arbitrage check for DLVs
-    if is_dlv_surface:
-        arbitrage_results = check_no_arbitrage(generated_data)
-        results.update(arbitrage_results)
+    if is_implied_vol_surface:
+        pass
+        # TODO: Implement no-arbitrage check for IVs
+        # arbitrage_results = check_no_arbitrage(generated_data)
+        # results.update(arbitrage_results)
     
     return results
 

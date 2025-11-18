@@ -187,7 +187,6 @@ class DataProcessor():
         self.relative_strike_grid = None
         self.implied_vols = None
         self.volumes = None
-        self.dlvs = None
 
     def get_implied_vol(self, price, S, K, T, r, option_type, volume):
         """
@@ -501,24 +500,6 @@ class DataProcessor():
         
         return self.option_prices, self.implied_vols, self.strike_grid, self.time_grid, self.relative_strike_grid, self.volumes, self.option_types
 
-    
-
-    # def create_log_dlv_series(self, time_steps: int):
-
-    #     n_strikes = len(self.strike_grid)
-    #     n_maturities = len(self.time_grid)
-    #     log_dlv_series = np.zeros((time_steps, n_strikes, n_maturities))
-
-    #     log_dlvs = log_transform(self.dlvs)
-    #     for i in range(time_steps):
-    #         if i == 0:
-    #             log_dlv_series[i] = log_dlvs.copy()
-    #         else:
-    #             # WARNING: This simulates historical log DLVs as a AR(1) process 
-    #             # Done to overcome lack of historical options data
-    #             log_dlv_series[i] = 0.98 * log_dlv_series[i-1] + 0.02 * log_dlvs + 0.01 * np.random.randn(n_strikes, n_maturities)
-            
-    #     return log_dlv_series
 
     def _validate_options_chains(self, options_chains: Dict):
         # options_chains must have keys as expiration dates and values as dicts with 'calls' and 'puts' DataFrames
@@ -583,8 +564,7 @@ class DataProcessor():
             'time_grid': self.time_grid,
             'relative_strike_grid': self.relative_strike_grid,
             'implied_vols': self.implied_vols,
-            'volumes': self.volumes,
-            'dlvs': self.dlvs
+            'volumes': self.volumes
         }
         
         np.savez(filename, **data)
@@ -613,7 +593,6 @@ class DataProcessor():
             self.relative_strike_grid = data['relative_strike_grid']
             self.implied_vols = data['implied_vols']
             self.volumes = data['volumes']
-            self.dlvs = data['dlvs']
             
             logger.info(f"Data loaded from {filename}")
             return True
@@ -623,7 +602,7 @@ class DataProcessor():
             return False
 
 
-class DataCache:
+class DataCache():
     """
     Cache and save processed option data by year in long format.
     """
@@ -643,6 +622,11 @@ class DataCache:
         self.ticker = ticker
         self.current_year_data = []
         self.current_year = None
+        # Time series of implied volatilities: (n_dates, n_relative_strikes, n_time_grid)
+        self.implied_vols_ts = []
+        self.relative_strikes_grid = None
+        self.time_grid = None
+        self.dates_list = []
     
     def add_date_data(self, date, current_price, option_prices, implied_vols, 
                      strike_grid, time_grid, relative_strike_grid, volume_array, option_types):
@@ -691,6 +675,29 @@ class DataCache:
             'volume_array': volume_array,
             'option_types': option_types
         })
+        
+        # Initialize grids from first date if not set
+        if self.relative_strikes_grid is None:
+            self.relative_strikes_grid = np.array(relative_strike_grid)
+            self.time_grid = np.array(time_grid)
+        
+        # Add implied volatilities to time series
+        # Ensure the array matches the grid dimensions
+        if np.array_equal(self.relative_strikes_grid, relative_strike_grid) and \
+           np.array_equal(self.time_grid, time_grid):
+            # Grids match, append directly
+            self.implied_vols_ts.append(np.array(implied_vols))
+            self.dates_list.append(date)
+        else:
+            # Grids don't match - this should never happen
+            logger.warning(f"Grid mismatch for date {date}. Expected shapes: "
+                         f"relative_strikes={len(self.relative_strikes_grid)}, "
+                         f"time={len(self.time_grid)}. Got: "
+                         f"relative_strikes={len(relative_strike_grid)}, "
+                         f"time={len(time_grid)}")
+            # For now, just append as-is (user may need to handle interpolation separately)
+            self.implied_vols_ts.append(np.array(implied_vols))
+            self.dates_list.append(date)
     
     def save_year_data(self, year: int = None):
         """
@@ -755,4 +762,170 @@ class DataCache:
         """
         if self.current_year_data:
             self.save_year_data()
-            self.current_year_data = [] 
+            self.current_year_data = []
+    
+    def get_implied_vols_array(self):
+        """
+        Get the implied volatilities time series as a 3D numpy array.
+        
+        Returns:
+        --------
+        ndarray
+            3D array with shape (n_dates, n_relative_strikes, n_time_grid)
+        """
+        if not self.implied_vols_ts:
+            return np.array([])
+        return np.array(self.implied_vols_ts)
+    
+    def load_implied_vols_from_data_dir(self, start_date=None, end_date=None):
+        """
+        Load implied volatilities from saved CSV files in DATA_DIR and populate
+        the implied_vols_ts attribute.
+        
+        The method reads all year subdirectories in DATA_DIR and reconstructs
+        the 3D array from the long-format CSV files.
+        
+        Parameters:
+        -----------
+        start_date : datetime.date or str, optional
+            Start date for filtering data (inclusive). If None, no lower bound.
+            If str, should be in format 'YYYY-MM-DD'.
+        end_date : datetime.date or str, optional
+            End date for filtering data (inclusive). If None, no upper bound.
+            If str, should be in format 'YYYY-MM-DD'.
+        """
+        if not os.path.exists(self.data_dir):
+            logger.error(f"Data directory does not exist: {self.data_dir}")
+            return False
+        
+        # Convert start_date and end_date to date objects if they are strings
+        if start_date is not None:
+            if isinstance(start_date, str):
+                start_date = pd.to_datetime(start_date).date()
+            elif isinstance(start_date, dt.datetime):
+                start_date = start_date.date()
+        if end_date is not None:
+            if isinstance(end_date, str):
+                end_date = pd.to_datetime(end_date).date()
+            elif isinstance(end_date, dt.datetime):
+                end_date = end_date.date()
+        
+        # Find all year subdirectories
+        year_dirs = []
+        for item in os.listdir(self.data_dir):
+            item_path = os.path.join(self.data_dir, item)
+            if os.path.isdir(item_path) and item.isdigit():
+                year_dirs.append(int(item))
+        
+        if not year_dirs:
+            logger.warning(f"No year subdirectories found in {self.data_dir}")
+            return False
+        
+        year_dirs.sort()
+        relative_strikes_set = set()
+        time_grid_set = set()
+        all_date_data = []  # Store (date, df) tuples for second pass
+        
+        # First pass: collect all unique relative_strikes and time_grid values
+        for year in year_dirs:
+            year_dir = os.path.join(self.data_dir, str(year))
+            filename = os.path.join(year_dir, f"{self.ticker}_options_data_{year}.csv")
+            
+            if not os.path.exists(filename):
+                logger.warning(f"File not found: {filename}")
+                continue
+            
+            try:
+                df = pd.read_csv(filename)
+                df['date'] = pd.to_datetime(df['date']).dt.date
+                
+                # Filter by date range if specified
+                if start_date is not None:
+                    df = df[df['date'] >= start_date]
+                if end_date is not None:
+                    df = df[df['date'] <= end_date]
+                
+                # Skip if no data in date range
+                if df.empty:
+                    continue
+                
+                # Collect unique relative_strikes and time_grid values
+                relative_strikes_set.update(df['relative_strike'].unique())
+                time_grid_set.update(df['maturity_years'].unique())
+                
+                # Store for second pass
+                all_date_data.append((year, df))
+                    
+            except Exception as e:
+                logger.error(f"Error loading data from {filename}: {e}")
+                continue
+        
+        if not all_date_data:
+            logger.warning("No data files found")
+            return False
+        
+        # Create unified grids (sorted)
+        self.relative_strikes_grid = np.array(sorted(relative_strikes_set))
+        self.time_grid = np.array(sorted(time_grid_set))
+        
+        logger.info(f"Unified grid: {len(self.relative_strikes_grid)} relative strikes, "
+                   f"{len(self.time_grid)} time points")
+        
+        # Second pass: align all dates to the unified grid
+        all_dates = []
+        all_implied_vols = []
+        
+        for year, df in all_date_data:
+            dates = sorted(df['date'].unique())
+            
+            # Filter dates by range (already filtered in first pass, but double-check)
+            if start_date is not None:
+                dates = [d for d in dates if d >= start_date]
+            if end_date is not None:
+                dates = [d for d in dates if d <= end_date]
+            
+            for date in dates:
+                date_df = df[df['date'] == date]
+                
+                # Pivot to wide format: relative_strike x maturity_years
+                pivot_df = date_df.pivot_table(
+                    values='implied_vol',
+                    index='relative_strike',
+                    columns='maturity_years',
+                    aggfunc='first'  # In case of duplicates
+                )
+                
+                # Reindex to unified grid (fills NaN for missing values)
+                pivot_df = pivot_df.reindex(
+                    index=self.relative_strikes_grid,
+                    columns=self.time_grid
+                )
+                
+                # Convert to numpy array
+                implied_vols_array = pivot_df.values
+                
+                # Check for NaN values (missing data points)
+                nan_count = np.isnan(implied_vols_array).sum()
+                if nan_count > 0:
+                    logger.debug(f"Date {date}: {nan_count} NaN values in implied volatilities")
+                
+                all_dates.append(date)
+                all_implied_vols.append(implied_vols_array)
+        
+        if not all_implied_vols:
+            logger.warning("No implied volatilities data loaded")
+            return False
+        
+        # Store the time series
+        self.implied_vols_ts = all_implied_vols
+        self.dates_list = all_dates
+        
+        date_range_str = ""
+        if start_date is not None or end_date is not None:
+            date_range_str = f" (date range: {start_date or 'start'} to {end_date or 'end'})"
+        
+        logger.info(f"Loaded {len(all_implied_vols)} dates of implied volatilities data{date_range_str}. "
+                   f"Shape: ({len(all_implied_vols)}, {len(self.relative_strikes_grid)}, "
+                   f"{len(self.time_grid)})")
+        
+        return True 

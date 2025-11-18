@@ -3,6 +3,9 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Union
+import logging
+
+logger = logging.getLogger(__name__)
 
 def make_dir_if_not_exists(path: Union[str, Path]) -> Path:
     """
@@ -295,3 +298,73 @@ def plot_surface(X, Y, Z, title, xlabel, ylabel, zlabel, cmap='viridis'):
     fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
     
     return fig, ax
+
+
+def remove_nan_values_nadaraya_watson(implied_vols_array, strikes, maturities, h1=None, h2=None):
+    """
+    Remove NaN values from implied volatility array by applying Nadaraya-Watson smoothing
+    to each time slice.
+    
+    Parameters:
+    -----------
+    implied_vols_array : ndarray
+        3D array with shape (n_dates, n_strikes, n_maturities) containing implied volatilities
+    strikes : list or ndarray
+        Relative strikes (K/S) corresponding to the second dimension
+    maturities : list or ndarray
+        Maturities in days corresponding to the third dimension
+    h1 : float, optional
+        Bandwidth parameter for moneyness dimension. If None, auto-estimated.
+    h2 : float, optional
+        Bandwidth parameter for time to maturity dimension. If None, auto-estimated.
+        
+    Returns:
+    --------
+    ndarray
+        Implied volatility array with NaN values filled using Nadaraya-Watson smoothing.
+        Same shape as input array.
+    """
+    from transforms import interpolate_implied_vol_surface
+    
+    implied_vols_array = np.asarray(implied_vols_array)
+    time_steps = implied_vols_array.shape[0]
+    
+    # Convert maturities from days to years for interpolation
+    maturities_years = np.array(maturities) / 365.0
+    strikes_array = np.array(strikes)
+    
+    initial_nan_count = np.isnan(implied_vols_array).sum()
+    
+    if initial_nan_count == 0:
+        logger.info("No NaN values found in implied_vols_array, skipping smoothing")
+        return implied_vols_array
+    
+    logger.info(f"Removing {initial_nan_count} NaN values using Nadaraya-Watson smoothing")
+    
+    # Process each time slice
+    for t in range(time_steps):
+        slice_2d = implied_vols_array[t]  # Shape: (n_strikes, n_maturities)
+        
+        # Check if there are any NaN values in this slice
+        if np.isnan(slice_2d).any():
+            # Apply Nadaraya-Watson smoothing to fill NaN values
+            # interpolate_implied_vol_surface handles NaN removal internally
+            smoothed_slice = interpolate_implied_vol_surface(
+                implied_vols=slice_2d,
+                strike_grid=strikes_array,
+                time_grid=maturities_years,
+                target_strikes=strikes_array,
+                target_maturities=maturities_years,
+                h1=h1,  # Auto-estimate if None
+                h2=h2   # Auto-estimate if None
+            )
+            implied_vols_array[t] = smoothed_slice
+    
+    final_nan_count = np.isnan(implied_vols_array).sum()
+    removed_count = initial_nan_count - final_nan_count
+    
+    logger.info(f"Nadaraya-Watson smoothing complete. "
+               f"Removed {removed_count} NaN values. "
+               f"Remaining NaN count: {final_nan_count}")
+    
+    return implied_vols_array

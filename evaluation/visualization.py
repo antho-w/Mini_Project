@@ -542,6 +542,104 @@ def create_evaluation_dashboard(evaluation_results, real_data, generated_data,
     return figures
 
 
+def plot_gan_losses(history, model_name, plot_dir):
+    """
+    Plot discriminator and generator losses by epoch.
+    
+    Parameters:
+    -----------
+    history : dict
+        Training history dictionary containing 'metrics' with 'gen_loss' and 'disc_loss'
+    model_name : str
+        Name of the model for the plot title
+    plot_dir : str
+        Directory to save the plot
+    """
+    import os
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    if 'metrics' not in history:
+        logger.warning(f"No metrics found in history for {model_name}")
+        return
+    
+    metrics = history['metrics']
+    
+    # Check if losses exist
+    if 'gen_loss' not in metrics or 'disc_loss' not in metrics:
+        logger.warning(f"gen_loss or disc_loss not found in history for {model_name}")
+        return
+    
+    gen_losses = metrics['gen_loss']
+    disc_losses = metrics['disc_loss']
+    
+    if not gen_losses or not disc_losses:
+        logger.warning(f"Empty loss arrays for {model_name}")
+        return
+    
+    epochs = range(1, len(gen_losses) + 1)
+    
+    # Create figure with subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+    
+    # Plot generator loss
+    ax1.plot(epochs, gen_losses, 'b-', label='Generator Loss', linewidth=2)
+    if 'val_gen_loss' in metrics and metrics['val_gen_loss']:
+        ax1.plot(epochs, metrics['val_gen_loss'], 'b--', label='Generator Val Loss', linewidth=2, alpha=0.7)
+    ax1.set_xlabel('Epoch', fontsize=12)
+    ax1.set_ylabel('Generator Loss', fontsize=12)
+    ax1.set_title(f'{model_name} - Generator Loss by Epoch', fontsize=14, fontweight='bold')
+    ax1.legend(fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    ax1.set_xlim(left=1)
+    
+    # Plot discriminator loss
+    ax2.plot(epochs, disc_losses, 'r-', label='Discriminator Loss', linewidth=2)
+    if 'val_disc_loss' in metrics and metrics['val_disc_loss']:
+        ax2.plot(epochs, metrics['val_disc_loss'], 'r--', label='Discriminator Val Loss', linewidth=2, alpha=0.7)
+    ax2.set_xlabel('Epoch', fontsize=12)
+    ax2.set_ylabel('Discriminator Loss', fontsize=12)
+    ax2.set_title(f'{model_name} - Discriminator Loss by Epoch', fontsize=14, fontweight='bold')
+    ax2.legend(fontsize=10)
+    ax2.grid(True, alpha=0.3)
+    ax2.set_xlim(left=1)
+    
+    plt.tight_layout()
+    
+    # Save plot
+    plot_path = os.path.join(plot_dir, f"{model_name.lower().replace('-', '_')}_losses.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    logger.info(f"Saved GAN loss plot to {plot_path}")
+    
+    # Also create a combined plot
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+    ax.plot(epochs, gen_losses, 'b-', label='Generator Loss', linewidth=2)
+    ax.plot(epochs, disc_losses, 'r-', label='Discriminator Loss', linewidth=2)
+    if 'val_gen_loss' in metrics and metrics['val_gen_loss']:
+        ax.plot(epochs, metrics['val_gen_loss'], 'b--', label='Generator Val Loss', linewidth=2, alpha=0.7)
+    if 'val_disc_loss' in metrics and metrics['val_disc_loss']:
+        ax.plot(epochs, metrics['val_disc_loss'], 'r--', label='Discriminator Val Loss', linewidth=2, alpha=0.7)
+    
+    ax.set_xlabel('Epoch', fontsize=12)
+    ax.set_ylabel('Loss', fontsize=12)
+    ax.set_title(f'{model_name} - Generator and Discriminator Losses by Epoch', fontsize=14, fontweight='bold')
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(left=1)
+    
+    plt.tight_layout()
+    
+    # Save combined plot
+    plot_path_combined = os.path.join(plot_dir, f"{model_name.lower().replace('-', '_')}_losses_combined.png")
+    plt.savefig(plot_path_combined, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    logger.info(f"Saved combined GAN loss plot to {plot_path_combined}")
+
+
 def summarize_evaluation_metrics(evaluation_results_dict):
     """
     Summarize evaluation metrics from multiple models.

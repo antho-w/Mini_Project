@@ -3,24 +3,30 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 import logging
-# import tensorflow as tf
+import matplotlib.pyplot as plt
+import tensorflow as tf
 from dateutil.relativedelta import relativedelta
 
 from utils.helpers import (
     make_dir_if_not_exists,
-    create_sequences
+    create_sequences,
+    remove_nan_values_nadaraya_watson
 )
 from data_classes import (
     DataRetriever,
     DataProcessor,
     DataCache
 )
-# from model_classes.dim_reducer import DimensionReducer
-# from model_classes.lstm_gan import LSTMGAN
-# from model_classes.tcn_gan import TCNGAN
+
+from model_classes.dim_reducer import DimensionReducer
+from model_classes.lstm_gan import LSTMGAN
+from model_classes.tcn_gan import TCNGAN
+
+from transforms import log_transform, interpolate_implied_vol_surface
 
 from evaluation.metrics import evaluate_model
-from evaluation.visualization import create_evaluation_dashboard, summarize_evaluation_metrics
+from evaluation.visualization import create_evaluation_dashboard, summarize_evaluation_metrics, plot_gan_losses
+
 
 if __name__ == "__main__":
     
@@ -28,17 +34,19 @@ if __name__ == "__main__":
     folder_dir = os.path.join(current_wd, "output", dt.datetime.now().strftime("%Y%m%d"))
     DATA_DIR = os.path.join(folder_dir, "data")
     LOG_DIR = os.path.join(folder_dir, "logs")
-
+    PLOT_DIR = os.path.join(DATA_DIR, "plots")
+    LOG_LEVEL = logging.INFO
 
     # Create output directories if they don't exist
     make_dir_if_not_exists(os.path.join(folder_dir))
     make_dir_if_not_exists(DATA_DIR)
     make_dir_if_not_exists(LOG_DIR)
-    
+    make_dir_if_not_exists(PLOT_DIR)
+
     # Set up logging to both console and file
     log_filename = os.path.join(LOG_DIR, f"run_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
     logging.basicConfig(
-        level=logging.INFO,
+        level=LOG_LEVEL,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(log_filename),
@@ -57,31 +65,33 @@ if __name__ == "__main__":
     SAVE_DATA = True
 
     # Parameters for data filtering and processing
-    TIME_STEPS = 1000 # Number of time steps to consider
     # STRIKES = [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]
     STRIKES = [0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2]
     MATURITIES = [30, 60, 90, 120, 150, 180, 360]
     
+    # Parameters for PCA
+    N_COMPONENTS = 5
+
     # Parameters for Training sets
-    SEQUENCE_LENGTH = 10 # Length of sequences for training must be > TIME_STEPS
-    BATCH_SIZE = 32
-    TRAIN_RATIO = 0.7
+    SEQUENCE_LENGTH = 100
+    BATCH_SIZE = 64
+    TRAIN_RATIO = 0.8
 
     # Parameters for GAN
-    NOISE_DIM = 32
+    NOISE_DIM = 16
     TRAIN_LSTM_GAN = True
     TRAIN_TCN_GAN = False
     # TRAIN_WGAN = False
-    EPOCHS = 10
-    LEARNING_RATE = 1e-5
+    EPOCHS = 100
+    LEARNING_RATE = 1e-4
     BETA_PARAM = 0.3
     GENERATE_LENGTH = 100
 
 
     STAGES_CONFIG = {
         # Stage 1: Get data
-        "READ_AND_CLEAN_DATA": True,
-        # Stage 2: Filter data and generate DLVs
+        "READ_AND_CLEAN_DATA": False,
+        # Stage 2: Filter data and generate IVs
         "TRANSFORM_DATA": True,
         # Stage 3: Apply PCA
         "APPLY_PCA": True,
@@ -182,30 +192,102 @@ if __name__ == "__main__":
             data_cache.finalize()
         
 
-
     if STAGES_CONFIG["APPLY_PCA"]:
+
+        # Initialise data processor by reading from output directory
+        if not STAGES_CONFIG["READ_AND_CLEAN_DATA"]:
+            data_cache = DataCache(DATA_DIR, TICKER)
+            data_cache.load_implied_vols_from_data_dir(START_DATE, END_DATE)
+
         logger.info(f"Applying PCA to log-implied volatilities series")
+
+        implied_vols_array = data_cache.get_implied_vols_array()
         
-        log_dlv_series_reshaped = log_dlv_series.reshape(TIME_STEPS, -1)
-        
+        # Remove any remaining NaN values using Nadaraya-Watson smoothing for each time slice
+        implied_vols_array = remove_nan_values_nadaraya_watson(implied_vols_array, STRIKES, MATURITIES)
+
+        # Transform into log-implied volatility series
+        log_implied_vols_series = log_transform(implied_vols_array)
+        time_steps = log_implied_vols_series.shape[0]
+
+        # Flatten the log-implied volatility series to (time_steps, n_strikes * n_maturities) for PCA
+        log_implied_vols_series_reshaped = log_implied_vols_series.reshape(time_steps, -1)
+        logger.info(f"Flattened Log-implied volatility series, shape is now: {log_implied_vols_series_reshaped.shape}")
+
         # Apply PCA
-        pca_reducer =DimensionReducer(N_COMPONENTS)
-        pca_components = pca_reducer.fit_transform(log_dlv_series_reshaped)
+        pca_reducer = DimensionReducer(N_COMPONENTS)
+        pca_components = pca_reducer.fit_transform(log_implied_vols_series_reshaped)
 
         logger.info(f"PCA explained variance: {pca_reducer.explained_variance_ratio}")
         logger.info(f"Cumulative explained variance: {pca_reducer.cumulative_explained_variance}")
 
+        # Plot explained variance
+        pca_reducer.plot_explained_variance()
+        plt.savefig(os.path.join(PLOT_DIR, "explained_variance.png"))
+        plt.close()
+
+        # Plot component weights
+        for i in range(N_COMPONENTS):
+            fig, ax = pca_reducer.plot_component_weights(component_idx=i, n_strikes=len(STRIKES), n_maturities=len(MATURITIES))
+            plt.savefig(os.path.join(PLOT_DIR, f"component_weights_{i}.png"))
+            plt.close()
+
+        if SAVE_DATA:
+            pca_reducer.save(os.path.join(DATA_DIR, "pca_reducer.pkl"))
+            logger.info(f"PCA model saved to {os.path.join(DATA_DIR, "pca_reducer.pkl")}")
+
     if STAGES_CONFIG["PREPARE_DATA"]:
+        from sklearn.preprocessing import StandardScaler
         logger.info(f"Preparing training data with sequence length {SEQUENCE_LENGTH}...")
         
         # Create sequences
         X, y = create_sequences(pca_components, sequence_length=SEQUENCE_LENGTH, target_steps=1)
-        
+
         # Create training and validation sets
         train_size = int(TRAIN_RATIO * len(X))
         
         X_train, y_train = X[:train_size], y[:train_size]
         X_val, y_val = X[train_size:], y[train_size:]
+        
+        # Normalize training and validation data
+        logger.info("Normalizing training and validation data...")
+        
+        # Reshape data for normalization (flatten sequences and features)
+        X_train_flat = X_train.reshape(-1, X_train.shape[-1])
+        y_train_flat = y_train.reshape(-1, y_train.shape[-1])
+        X_val_flat = X_val.reshape(-1, X_val.shape[-1])
+        y_val_flat = y_val.reshape(-1, y_val.shape[-1])
+        
+        # Fit scaler on training data only
+        scaler_X = StandardScaler()
+        scaler_y = StandardScaler()
+        
+        X_train_scaled_flat = scaler_X.fit_transform(X_train_flat)
+        y_train_scaled_flat = scaler_y.fit_transform(y_train_flat)
+        
+        # Transform validation data using training scalers
+        X_val_scaled_flat = scaler_X.transform(X_val_flat)
+        y_val_scaled_flat = scaler_y.transform(y_val_flat)
+        
+        # Reshape back to original sequence structure
+        X_train = X_train_scaled_flat.reshape(X_train.shape)
+        y_train = y_train_scaled_flat.reshape(y_train.shape)
+        X_val = X_val_scaled_flat.reshape(X_val.shape)
+        y_val = y_val_scaled_flat.reshape(y_val.shape)
+        
+        logger.info(f"Normalization complete. Training data mean: {np.mean(X_train):.4f}, std: {np.std(X_train):.4f}")
+        logger.info(f"Target data mean: {np.mean(y_train):.4f}, std: {np.std(y_train):.4f}")
+        
+        # Save scalers for denormalization during generation
+        if SAVE_DATA:
+            import pickle
+            scaler_path_X = os.path.join(DATA_DIR, "scaler_X.pkl")
+            scaler_path_y = os.path.join(DATA_DIR, "scaler_y.pkl")
+            with open(scaler_path_X, 'wb') as f:
+                pickle.dump(scaler_X, f)
+            with open(scaler_path_y, 'wb') as f:
+                pickle.dump(scaler_y, f)
+            logger.info(f"Saved scalers to {DATA_DIR}")
         
         # Create TensorFlow datasets
         buffer_size = min(1000, len(X_train))
@@ -254,6 +336,9 @@ if __name__ == "__main__":
             # Train model
             history = lstm_gan.train(train_dataset, validation_dataset=val_dataset, epochs=EPOCHS, verbose=1)
             models['LSTM-GAN'] = lstm_gan
+            
+            # Plot discriminator and generator losses
+            plot_gan_losses(lstm_gan.history, 'LSTM-GAN', PLOT_DIR)
 
         if TRAIN_TCN_GAN:
             logger.info(f"Training TCN-GAN model with {EPOCHS} epochs")
@@ -278,15 +363,33 @@ if __name__ == "__main__":
             # Train model
             history = tcn_gan.train(train_dataset, validation_dataset=val_dataset, epochs=EPOCHS, verbose=1)
             models['TCN-GAN'] = tcn_gan
+            
+            # Plot discriminator and generator losses
+            plot_gan_losses(tcn_gan.history, 'TCN-GAN', PLOT_DIR)
         
         pass
 
     if STAGES_CONFIG["SIMULATE_AND_EVALUATE"] and models:
         logger.info(f"Generating synthetic data and evaluating models")
         
+        # Load scalers for denormalization
+        import pickle
+        scaler_path_X = os.path.join(DATA_DIR, "scaler_X.pkl")
+        scaler_path_y = os.path.join(DATA_DIR, "scaler_y.pkl")
+        
+        if os.path.exists(scaler_path_X) and os.path.exists(scaler_path_y):
+            with open(scaler_path_X, 'rb') as f:
+                scaler_X = pickle.load(f)
+            with open(scaler_path_y, 'rb') as f:
+                scaler_y = pickle.load(f)
+            logger.info("Loaded scalers for denormalization")
+        else:
+            logger.warning("Scalers not found. Generated data will not be denormalized.")
+            scaler_X = None
+            scaler_y = None
+        
         # Ensure plots directory exists
-        plots_dir = os.path.join(current_wd, 'plots', dt.datetime.now().strftime("%Y%m%d_%H%M%S"))
-        make_dir_if_not_exists(plots_dir)
+        # initial_state is already normalized (from X_val)
         initial_state = X_val[0:1]
 
         # Initialize results dictionaries
@@ -298,44 +401,52 @@ if __name__ == "__main__":
         n_maturities = len(MATURITIES)
 
         # Get a subset of real data for comparison
-        real_log_dlvs_subset = log_dlv_series[:SEQUENCE_LENGTH]
-        real_log_dlvs_flat = real_log_dlvs_subset.reshape(SEQUENCE_LENGTH, -1)
+        real_log_IV_subset = log_implied_vols_series[:GENERATE_LENGTH]
+        real_log_IV_flat = real_log_IV_subset.reshape(GENERATE_LENGTH, -1)
         
         # Generate and evaluate for each model        
         for model_name, model in models.items():
             logger.info(f"Generating and evaluating {model_name}...")
             
-            # Generate PCA components
+            # Generate PCA components (these are normalized)
             generated_sequence = model.generate_sequences(
                 initial_state, 
-                sequence_length=SEQUENCE_LENGTH, 
+                sequence_length=GENERATE_LENGTH, 
                 use_generated_state=True
             )
             
-            # Transform PCA components back to log-DLVs
-            generated_log_dlvs = pca_reducer.inverse_transform(
+            # Denormalize generated PCA components before inverse transform
+            if scaler_y is not None:
+                logger.info(f"Denormalizing generated sequence before inverse PCA transform")
+                generated_sequence_flat = generated_sequence.reshape(-1, generated_sequence.shape[-1])
+                generated_sequence_denorm_flat = scaler_y.inverse_transform(generated_sequence_flat)
+                generated_sequence = generated_sequence_denorm_flat.reshape(generated_sequence.shape)
+                logger.debug(f"Generated sequence denormalized. Mean: {np.mean(generated_sequence):.4f}, std: {np.std(generated_sequence):.4f}")
+            
+            # Transform PCA components back to log-IVs
+            generated_log_IVs = pca_reducer.inverse_transform(
                 generated_sequence, 
-                original_shape=(SEQUENCE_LENGTH, n_strikes, n_maturities)
+                original_shape=(GENERATE_LENGTH, n_strikes, n_maturities)
             )
             
             # Reshape for evaluation
-            generated_log_dlvs_flat = generated_log_dlvs.reshape(SEQUENCE_LENGTH, -1)
+            generated_log_IV_flat = generated_log_IVs.reshape(GENERATE_LENGTH, -1)
             
             # --- DEBUG LOGGING ---
             logger.debug(f"Debugging inputs for evaluate_model ({model_name})")
-            logger.debug(f"Real data shape: {real_log_dlvs_flat.shape}")
-            logger.debug(f"Generated data shape: {generated_log_dlvs_flat.shape}")
-            logger.debug(f"Real data contains NaN: {np.isnan(real_log_dlvs_flat).any()}")
-            logger.debug(f"Generated data contains NaN: {np.isnan(generated_log_dlvs_flat).any()}")
-            logger.debug(f"Real data column variances: {np.var(real_log_dlvs_flat, axis=0)}")
-            logger.debug(f"Generated data column variances: {np.var(generated_log_dlvs_flat, axis=0)}")
+            logger.debug(f"Real data shape: {real_log_IV_flat.shape}")
+            logger.debug(f"Generated data shape: {generated_log_IV_flat.shape}")
+            logger.debug(f"Real data contains NaN: {np.isnan(real_log_IV_flat).any()}")
+            logger.debug(f"Generated data contains NaN: {np.isnan(generated_log_IV_flat).any()}")
+            logger.debug(f"Real data column variances: {np.var(real_log_IV_flat, axis=0)}")
+            logger.debug(f"Generated data column variances: {np.var(generated_log_IV_flat, axis=0)}")
             # --- END DEBUG LOGGING ---
 
             # Evaluate the model
             results = evaluate_model(
-                real_log_dlvs_flat, 
-                generated_log_dlvs_flat,
-                is_dlv_surface=True,
+                real_log_IV_flat, 
+                generated_log_IV_flat,
+                is_implied_vol_surface=True,
                 n_strikes=n_strikes,
                 n_maturities=n_maturities
             )
@@ -343,13 +454,13 @@ if __name__ == "__main__":
             # Create evaluation dashboard
             figures = create_evaluation_dashboard(
                 results,
-                real_log_dlvs_flat,
-                generated_log_dlvs_flat,
-                save_path=os.path.join(plots_dir, model_name.lower())
+                real_log_IV_flat,
+                generated_log_IV_flat,
+                save_path=os.path.join(PLOT_DIR, model_name.lower())
             )
         
             # Store results
-            generated_sequences[model_name] = generated_log_dlvs
+            generated_sequences[model_name] = generated_log_IVs
             evaluation_results[model_name] = results
             all_figures[model_name] = figures
     
@@ -359,6 +470,6 @@ if __name__ == "__main__":
     logger.info(f"\n{comparison_df}")
     
     # Save comparison to CSV
-    comparison_df.to_csv(os.path.join(plots_dir, 'model_comparison.csv'))
+    comparison_df.to_csv(os.path.join(DATA_DIR, 'model_comparison.csv'))
 
 

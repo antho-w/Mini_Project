@@ -30,14 +30,14 @@ class DimensionReducer:
         self.explained_variance_ratio = None
         self.cumulative_explained_variance = None
     
-    def fit(self, log_dlvs):
+    def fit(self, log_IV_series):
         """
-        Fit the PCA model to the log-DLV data.
+        Fit the PCA model to the log-implied volatility data.
         
         Parameters:
         -----------
-        log_dlvs : ndarray
-            Array of log-DLV data with shape (n_samples, n_features)
+        log_IV_series : ndarray
+            Array of log-implied volatility data with shape (n_samples, n_features)
             where n_features = n_strikes * n_maturities
             
         Returns:
@@ -46,14 +46,14 @@ class DimensionReducer:
             Returns self for method chaining
         """
         # Reshape if necessary
-        if log_dlvs.ndim > 2:
-            n_samples = log_dlvs.shape[0]
-            log_dlvs_reshaped = log_dlvs.reshape(n_samples, -1)
+        if log_IV_series.ndim > 2:
+            n_samples = log_IV_series.shape[0]
+            log_IV_series_reshaped = log_IV_series.reshape(n_samples, -1)
         else:
-            log_dlvs_reshaped = log_dlvs
+            log_IV_series_reshaped = log_IV_series
         
         # Fit PCA model
-        self.pca.fit(log_dlvs_reshaped)
+        self.pca.fit(log_IV_series_reshaped)
         
         # Store explained variance information
         self.explained_variance_ratio = self.pca.explained_variance_ratio_
@@ -62,13 +62,13 @@ class DimensionReducer:
         self.is_fitted = True
         return self
     
-    def transform(self, log_dlvs):
+    def transform(self, log_IV_series):
         """
         Transform log-DLV data to PCA components.
         
         Parameters:
         -----------
-        log_dlvs : ndarray
+        log_IV_series : ndarray
             Array of log-DLV data with shape (n_samples, n_features)
             or (n_samples, n_strikes, n_maturities)
             
@@ -80,21 +80,19 @@ class DimensionReducer:
         if not self.is_fitted:
             raise ValueError("The PCA model must be fitted before transformation")
         
-        # Reshape if necessary
-        original_shape = log_dlvs.shape
-        if log_dlvs.ndim > 2:
-            n_samples = log_dlvs.shape[0]
-            log_dlvs_reshaped = log_dlvs.reshape(n_samples, -1)
+        if log_IV_series.ndim > 2:
+            n_samples = log_IV_series.shape[0]
+            log_IV_series_reshaped = log_IV_series.reshape(n_samples, -1)
         else:
-            log_dlvs_reshaped = log_dlvs
+            log_IV_series_reshaped = log_IV_series
         
         # Transform data
-        transformed_data = self.pca.transform(log_dlvs_reshaped)
+        transformed_data = self.pca.transform(log_IV_series_reshaped)
         return transformed_data
     
     def inverse_transform(self, pca_components, original_shape=None):
         """
-        Transform PCA components back to log-DLV data.
+        Transform PCA components back to log-implied volatility data.
         
         Parameters:
         -----------
@@ -106,7 +104,7 @@ class DimensionReducer:
         Returns:
         --------
         ndarray
-            Reconstructed log-DLV data with shape determined by original_shape or
+            Reconstructed log-implied volatility data with shape determined by original_shape or
             (n_samples, n_features) if original_shape is None
         """
         if not self.is_fitted:
@@ -121,13 +119,13 @@ class DimensionReducer:
         
         return reconstructed_data
     
-    def fit_transform(self, log_dlvs):
+    def fit_transform(self, log_IV_series):
         """
         Fit the PCA model and transform the data in one step.
         
         Parameters:
         -----------
-        log_dlvs : ndarray
+        log_IV_series : ndarray
             Array of log-DLV data with shape (n_samples, n_features)
             or (n_samples, n_strikes, n_maturities)
             
@@ -136,17 +134,17 @@ class DimensionReducer:
         ndarray
             Transformed data with shape (n_samples, n_components)
         """
-        self.fit(log_dlvs)
-        return self.transform(log_dlvs)
+        self.fit(log_IV_series)
+        return self.transform(log_IV_series)
     
-    def reconstruct(self, log_dlvs, original_shape=None):
+    def reconstruct(self, log_IV_series, original_shape=None):
         """
-        Compress and reconstruct log-DLV data to assess reconstruction quality.
+        Compress and reconstruct log-implied volatility data to assess reconstruction quality.
         
         Parameters:
         -----------
-        log_dlvs : ndarray
-            Array of log-DLV data with shape (n_samples, n_features)
+        log_IV_series : ndarray
+            Array of log-implied volatility data with shape (n_samples, n_features)
             or (n_samples, n_strikes, n_maturities)
         original_shape : tuple, optional
             Shape to reshape the reconstructed data to
@@ -154,19 +152,18 @@ class DimensionReducer:
         Returns:
         --------
         ndarray
-            Reconstructed log-DLV data with the same shape as the input
+            Reconstructed log-implied volatility data with the same shape as the input
         """
         if not self.is_fitted:
-            self.fit(log_dlvs)
+            self.fit(log_IV_series)
         
         # Save original shape
         if original_shape is None:
-            original_shape = log_dlvs.shape
+            original_shape = log_IV_series.shape
         
         # Transform and inverse transform
-        pca_components = self.transform(log_dlvs)
+        pca_components = self.transform(log_IV_series)
         reconstructed_data = self.inverse_transform(pca_components, original_shape)
-        
         return reconstructed_data
     
     def plot_explained_variance(self, figsize=(10, 6)):
@@ -242,7 +239,7 @@ class DimensionReducer:
         maturity_grid = np.linspace(20/365, 120/365, n_maturities)  # In years
         
         # Plot as a surface
-        from ..utils.helpers import plot_surface
+        from utils.helpers import plot_surface
         fig, ax = plot_surface(
             strike_grid, maturity_grid, component_weights,
             f'Weights of Principal Component {component_idx+1}',

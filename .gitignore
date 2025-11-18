@@ -4,7 +4,6 @@ __pycache__/
 
 # Ignore logs and plotting outputs
 logs/
-plots/
 
 #
 

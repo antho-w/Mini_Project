@@ -259,6 +259,9 @@ class LSTMGAN(BaseModel):
         next_state_reshaped = tf.reshape(next_state, [-1, self.output_dim])
 
         # Train discriminator
+        # Ensure discriminator is trainable
+        self.discriminator.trainable = True
+        
         with tf.GradientTape() as disc_tape:
             # Generate fake data
             noise = tf.random.normal([batch_size, self.noise_dim])
@@ -275,11 +278,20 @@ class LSTMGAN(BaseModel):
         
         # Apply discriminator gradients
         disc_gradients = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
-        self.discriminator_optimizer.apply_gradients(
-            zip(disc_gradients, self.discriminator.trainable_variables)
-        )
+        
+        # Filter out None gradients and ensure we have valid gradients
+        disc_grads_and_vars = [
+            (grad, var) for grad, var in zip(disc_gradients, self.discriminator.trainable_variables)
+            if grad is not None
+        ]
+        
+        if disc_grads_and_vars:
+            self.discriminator_optimizer.apply_gradients(disc_grads_and_vars)
         
         # Train the generator
+        # Freeze discriminator for generator training
+        self.discriminator.trainable = False
+        
         with tf.GradientTape() as gen_tape:
             # Generate fake data
             generated_data = self.generator([noise, state], training=True)
@@ -293,9 +305,15 @@ class LSTMGAN(BaseModel):
         
         # Apply generator gradients
         gen_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
-        self.generator_optimizer.apply_gradients(
-            zip(gen_gradients, self.generator.trainable_variables)
-        )
+        
+        # Filter out None gradients and ensure we have valid gradients
+        gen_grads_and_vars = [
+            (grad, var) for grad, var in zip(gen_gradients, self.generator.trainable_variables)
+            if grad is not None
+        ]
+        
+        if gen_grads_and_vars:
+            self.generator_optimizer.apply_gradients(gen_grads_and_vars)
         
         # Calculate accuracy metrics
         disc_real_acc = tf.reduce_mean(tf.cast(real_output > 0.5, tf.float32))

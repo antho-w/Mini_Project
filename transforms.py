@@ -71,67 +71,6 @@ def local_volatility_dupire(implied_vols, S, K_grid, T_grid, r):
     return local_vols
 
 
-def discrete_local_volatility(implied_vols, S, K_grid, T_grid, r):
-    """
-    Convert implied volatility surface to discrete local volatilities (DLVs).
-    
-    This is a simplified implementation that needs to be enhanced based on
-    the specific methodology described in Buehler (2017) and Wissel (2007).
-    
-    Parameters:
-    -----------
-    implied_vols : ndarray
-        Implied volatility surface with shape (n_strikes, n_maturities)
-    S : float
-        Underlying asset price
-    K_grid : ndarray
-        Array of strike prices
-    T_grid : ndarray
-        Array of maturities in years
-    r : float
-        Risk-free interest rate (annualized)
-        
-    Returns:
-    --------
-    ndarray
-        Discrete local volatility surface with shape (n_strikes, n_maturities)
-    """
-    # For now, we'll use Dupire's formula as an approximation
-    # In a real implementation, this should be replaced with the actual DLV calculation
-    # as described in the referenced papers
-    return local_volatility_dupire(implied_vols, S, K_grid, T_grid, r)
-
-
-def dlv_to_implied_vol(dlvs, S, K_grid, T_grid, r):
-    """
-    Convert DLVs back to implied volatilities.
-    
-    This is a placeholder function that needs to be implemented based on
-    the methodology described in the referenced papers.
-    
-    Parameters:
-    -----------
-    dlvs : ndarray
-        Discrete local volatility surface with shape (n_strikes, n_maturities)
-    S : float
-        Underlying asset price
-    K_grid : ndarray
-        Array of strike prices
-    T_grid : ndarray
-        Array of maturities in years
-    r : float
-        Risk-free interest rate (annualized)
-        
-    Returns:
-    --------
-    ndarray
-        Implied volatility surface with shape (n_strikes, n_maturities)
-    """
-    # This requires implementing the inverse transformation
-    # For now, we'll return a simple approximation
-    return dlvs  # This is not correct and needs to be implemented properly
-
-
 def check_no_arbitrage(option_prices, S, K_grid, T_grid, r):
     """
     Check if option prices satisfy no-arbitrage conditions.
@@ -174,24 +113,6 @@ def check_no_arbitrage(option_prices, S, K_grid, T_grid, r):
     # Add more no-arbitrage checks as needed
     
     return True
-
-
-def check_dlv_no_arbitrage(dlvs):
-    """
-    Check if DLVs satisfy no-arbitrage conditions.
-    
-    Parameters:
-    -----------
-    dlvs : ndarray
-        Discrete local volatility surface with shape (n_strikes, n_maturities)
-        
-    Returns:
-    --------
-    bool
-        True if no-arbitrage conditions are satisfied, False otherwise
-    """
-    # For DLVs, the no-arbitrage condition is simply non-negativity
-    return np.all(dlvs > 0)
 
 def log_transform(data, epsilon=1e-10):
     """
