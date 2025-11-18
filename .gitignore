@@ -2,11 +2,6 @@
 *.pyc
 __pycache__/
 
-# Ignore logs and plotting outputs
-logs/
-
-#
-
 # Virtual environment (commonly named .venv)
 .venv/
 
