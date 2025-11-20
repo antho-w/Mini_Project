@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     STAGES_CONFIG = {
         # Stage 1: Get data
-        "READ_AND_CLEAN_DATA": True,
+        "READ_AND_CLEAN_DATA": False,
         # Stage 2: Filter data and generate IVs
         "TRANSFORM_DATA": True,
         # Stage 3: Apply PCA
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         # Stage 4: Prepare GAN datasets
         "PREPARE_DATA": True,
         # Stage 5: Train GAN
-        "TRAIN_GAN": True,
+        "TRAIN_GAN": False,
         # Stage 6: Simulate and evaluate
         "SIMULATE_AND_EVALUATE": True
     }

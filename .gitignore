@@ -5,6 +5,9 @@ __pycache__/
 # Virtual environment (commonly named .venv)
 .venv/
 
+# Large file
+*/output/20251119/logs/run_20251119_135857.log
+
 # Optional: OS files
 .DS_Store
 Thumbs.db
