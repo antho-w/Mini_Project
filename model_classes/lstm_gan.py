@@ -21,6 +21,9 @@ class LSTMGAN(BaseModel):
                  discriminator_units=[256, 128],
                  use_pca=False,
                  n_pca_components=5,
+                 random_seed=None,
+                 gen_grad_clip=1.0,
+                 disc_grad_clip=1.0,
                  log_dir='logs'):
         """
         Initialize LSTM-GAN model.
@@ -41,6 +44,12 @@ class LSTMGAN(BaseModel):
             Whether to use PCA compression for the output
         n_pca_components : int
             Number of PCA components if use_pca is True
+        random_seed : int, optional
+            Random seed for reproducible noise generation during training (default: None)
+        gen_grad_clip : float, optional
+            Maximum norm for generator gradient clipping (default: 1.0). Set to None to disable.
+        disc_grad_clip : float, optional
+            Maximum norm for discriminator gradient clipping (default: 1.0). Set to None to disable.
         log_dir : str
             Directory for saving logs
         """
@@ -50,6 +59,15 @@ class LSTMGAN(BaseModel):
         self.generator_units = generator_units
         self.discriminator_units = discriminator_units
         self.use_pca = use_pca
+        self.random_seed = random_seed
+        self.gen_grad_clip = gen_grad_clip
+        self.disc_grad_clip = disc_grad_clip
+        
+        # Create a random number generator for reproducible noise generation
+        if random_seed is not None:
+            self.rng = tf.random.Generator.from_seed(random_seed)
+        else:
+            self.rng = tf.random.Generator.from_non_deterministic_state()
         
         # Define input dimensions for the base model
         input_dim = (noise_dim + state_dim[1] * state_dim[2],)  # Combined noise and flattened state
@@ -263,8 +281,8 @@ class LSTMGAN(BaseModel):
         self.discriminator.trainable = True
         
         with tf.GradientTape() as disc_tape:
-            # Generate fake data
-            noise = tf.random.normal([batch_size, self.noise_dim])
+            # Generate fake data with reproducible random generator
+            noise = self.rng.normal([batch_size, self.noise_dim])
             generated_data = self.generator([noise, state], training=False)
             
             # Get discriminator outputs
@@ -278,6 +296,11 @@ class LSTMGAN(BaseModel):
         
         # Apply discriminator gradients
         disc_gradients = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
+        
+        # Apply gradient clipping if enabled
+        if self.disc_grad_clip is not None:
+            disc_gradients = [tf.clip_by_norm(grad, self.disc_grad_clip) if grad is not None else None 
+                            for grad in disc_gradients]
         
         # Filter out None gradients and ensure we have valid gradients
         disc_grads_and_vars = [
@@ -293,7 +316,8 @@ class LSTMGAN(BaseModel):
         self.discriminator.trainable = False
         
         with tf.GradientTape() as gen_tape:
-            # Generate fake data
+            # Generate fake data (reuse same noise from discriminator training for consistency)
+            # The noise is already generated using the random generator above
             generated_data = self.generator([noise, state], training=True)
             
             # Get discriminator output for the generated data
@@ -305,6 +329,11 @@ class LSTMGAN(BaseModel):
         
         # Apply generator gradients
         gen_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
+        
+        # Apply gradient clipping if enabled
+        if self.gen_grad_clip is not None:
+            gen_gradients = [tf.clip_by_norm(grad, self.gen_grad_clip) if grad is not None else None 
+                           for grad in gen_gradients]
         
         # Filter out None gradients and ensure we have valid gradients
         gen_grads_and_vars = [
@@ -390,8 +419,8 @@ class LSTMGAN(BaseModel):
         ndarray
             Generated samples
         """
-        # Create random noise
-        noise = tf.random.normal([n_samples, self.noise_dim])
+        # Create random noise using the random generator for reproducibility
+        noise = self.rng.normal([n_samples, self.noise_dim])
         
         # Ensure state has the right shape
         if len(state.shape) == 2:  # (seq_length, features)

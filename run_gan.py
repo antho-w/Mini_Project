@@ -22,16 +22,18 @@ from model_classes.dim_reducer import DimensionReducer
 from model_classes.lstm_gan import LSTMGAN
 from model_classes.tcn_gan import TCNGAN
 
-from transforms import log_transform
+from transforms import log_transform, bs_price
 
 from evaluation.metrics import evaluate_model
 from evaluation.visualization import create_evaluation_dashboard, summarize_evaluation_metrics, plot_gan_losses
 
 
 if __name__ == "__main__":
+    # Set TensorFlow to use deterministic operations (may impact performance)
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
     
     current_wd = os.getcwd()
-    folder_dir = os.path.join(current_wd, "output", dt.datetime.now().strftime("%Y%m%d"))
+    folder_dir = os.path.join(current_wd, "output", "20251119")
     DATA_DIR = os.path.join(folder_dir, "data")
     LOG_DIR = os.path.join(folder_dir, "logs")
     PLOT_DIR = os.path.join(DATA_DIR, "plots")
@@ -78,19 +80,68 @@ if __name__ == "__main__":
     TRAIN_RATIO = 0.85
 
     # Parameters for GAN
-    NOISE_DIM = 32
+    NOISE_DIM = 64 # 32d
     TRAIN_LSTM_GAN = True
     TRAIN_TCN_GAN = False
-    EPOCHS = 100
-    LEARNING_RATE_DES = 3e-4
-    LEARNING_RATE_GEN = 1e-4
+    EPOCHS = 250 # 75
+    LEARNING_RATE_DES = 3e-4 # 3e-4
+    LEARNING_RATE_GEN = 5e-5 # 5e-5
     BETA_PARAM = 0.3 # 0.3
-    GENERATE_LENGTH = 100
+    GENERATE_LENGTH = 252
+    RANDOM_SEED = 10
+    # Gradient clipping parameters to reduce validation loss volatility
+    GEN_GRAD_CLIP = 0.5  # Maximum norm for generator gradient clipping
+    DISC_GRAD_CLIP = 1.0  # Maximum norm for discriminator gradient clipping
 
+    # Set random seeds for reproducibility
+    logger.info(f"Random seed: {RANDOM_SEED}")
+    np.random.seed(RANDOM_SEED)
+    tf.random.set_seed(RANDOM_SEED)
+    import random
+    random.seed(RANDOM_SEED)
+
+    # Log all hyperparameters for this run
+    logger.info("=" * 80)
+    logger.info("HYPERPARAMETERS FOR THIS RUN")
+    logger.info("=" * 80)
+    logger.info("Data Parameters:")
+    logger.info(f"  TICKER: {TICKER}")
+    logger.info(f"  START_DATE: {START_DATE}")
+    logger.info(f"  END_DATE: {END_DATE}")
+    logger.info(f"  N_YEARS: {N_YEARS}")
+    logger.info(f"  STRIKES: {STRIKES}")
+    logger.info(f"  MATURITIES: {MATURITIES}")
+    logger.info("")
+    logger.info("PCA Parameters:")
+    logger.info(f"  N_COMPONENTS: {N_COMPONENTS}")
+    logger.info("")
+    logger.info("Data Preparation Parameters:")
+    logger.info(f"  SEQUENCE_LENGTH: {SEQUENCE_LENGTH}")
+    logger.info(f"  BATCH_SIZE: {BATCH_SIZE}")
+    logger.info(f"  TRAIN_RATIO: {TRAIN_RATIO}")
+    logger.info("")
+    logger.info("GAN Training Parameters:")
+    logger.info(f"  NOISE_DIM: {NOISE_DIM}")
+    logger.info(f"  EPOCHS: {EPOCHS}")
+    logger.info(f"  LEARNING_RATE_GEN: {LEARNING_RATE_GEN}")
+    logger.info(f"  LEARNING_RATE_DES: {LEARNING_RATE_DES}")
+    logger.info(f"  BETA_PARAM: {BETA_PARAM}")
+    logger.info(f"  GEN_GRAD_CLIP: {GEN_GRAD_CLIP}")
+    logger.info(f"  DISC_GRAD_CLIP: {DISC_GRAD_CLIP}")
+    logger.info(f"  RANDOM_SEED: {RANDOM_SEED}")
+    logger.info("")
+    logger.info("Generation Parameters:")
+    logger.info(f"  GENERATE_LENGTH: {GENERATE_LENGTH}")
+    logger.info("")
+    logger.info("Model Training Flags:")
+    logger.info(f"  TRAIN_LSTM_GAN: {TRAIN_LSTM_GAN}")
+    logger.info(f"  TRAIN_TCN_GAN: {TRAIN_TCN_GAN}")
+    logger.info("=" * 80)
+    logger.info("")
 
     STAGES_CONFIG = {
         # Stage 1: Get data
-        "READ_AND_CLEAN_DATA": False,
+        "READ_AND_CLEAN_DATA": True,
         # Stage 2: Filter data and generate IVs
         "TRANSFORM_DATA": True,
         # Stage 3: Apply PCA
@@ -293,7 +344,7 @@ if __name__ == "__main__":
         buffer_size = min(1000, len(X_train))
         
         train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
-        train_dataset = train_dataset.shuffle(buffer_size).batch(BATCH_SIZE)
+        train_dataset = train_dataset.shuffle(buffer_size, seed=RANDOM_SEED).batch(BATCH_SIZE)
 
         val_dataset = tf.data.Dataset.from_tensor_slices((X_val, y_val))
         val_dataset = val_dataset.batch(BATCH_SIZE)
@@ -311,7 +362,30 @@ if __name__ == "__main__":
         models = {}
 
         if TRAIN_LSTM_GAN:
+            logger.info("")
+            logger.info("=" * 80)
+            logger.info("LSTM-GAN MODEL CONFIGURATION")
+            logger.info("=" * 80)
             logger.info(f"Training LSTM-GAN model with {EPOCHS} epochs")
+            logger.info("")
+            logger.info("Model Architecture:")
+            logger.info(f"  state_dim: {state_dim}")
+            logger.info(f"  noise_dim: {noise_dim}")
+            logger.info(f"  output_dim: {output_dim}")
+            logger.info(f"  generator_units: [64, 128]")
+            logger.info(f"  discriminator_units: [128, 64]")
+            logger.info(f"  use_pca: True")
+            logger.info(f"  n_pca_components: {output_dim}")
+            logger.info("")
+            logger.info("Training Hyperparameters:")
+            logger.info(f"  Learning Rate (Generator): {LEARNING_RATE_GEN}")
+            logger.info(f"  Learning Rate (Discriminator): {LEARNING_RATE_DES}")
+            logger.info(f"  Beta (Adam optimizer): {BETA_PARAM}")
+            logger.info(f"  Generator Gradient Clipping: {GEN_GRAD_CLIP}")
+            logger.info(f"  Discriminator Gradient Clipping: {DISC_GRAD_CLIP}")
+            logger.info(f"  Random Seed: {RANDOM_SEED}")
+            logger.info("=" * 80)
+            logger.info("")
 
             lstm_gan = LSTMGAN(
                 state_dim=state_dim,
@@ -321,6 +395,9 @@ if __name__ == "__main__":
                 discriminator_units=[128, 64],
                 use_pca=True,
                 n_pca_components=output_dim,
+                random_seed=RANDOM_SEED,
+                gen_grad_clip=GEN_GRAD_CLIP,
+                disc_grad_clip=DISC_GRAD_CLIP,
                 log_dir=LOG_DIR
             )
             
@@ -344,7 +421,30 @@ if __name__ == "__main__":
 
 
         if TRAIN_TCN_GAN:
+            logger.info("")
+            logger.info("=" * 80)
+            logger.info("TCN-GAN MODEL CONFIGURATION")
+            logger.info("=" * 80)
             logger.info(f"Training TCN-GAN model with {EPOCHS} epochs")
+            logger.info("")
+            logger.info("Model Architecture:")
+            logger.info(f"  state_dim: {state_dim}")
+            logger.info(f"  noise_dim: {noise_dim}")
+            logger.info(f"  output_dim: {output_dim}")
+            logger.info(f"  generator_filters: [64, 128, 64]")
+            logger.info(f"  discriminator_filters: [64, 128, 64]")
+            logger.info(f"  kernel_size: 3")
+            logger.info(f"  use_pca: True")
+            logger.info(f"  n_pca_components: {output_dim}")
+            logger.info("")
+            logger.info("Training Hyperparameters:")
+            logger.info(f"  Learning Rate (Generator): {LEARNING_RATE_GEN}")
+            logger.info(f"  Learning Rate (Discriminator): {LEARNING_RATE_DES}")
+            logger.info(f"  Beta (Adam optimizer): {BETA_PARAM}")
+            logger.info(f"  Random Seed: {RANDOM_SEED}")
+            logger.info("=" * 80)
+            logger.info("")
+            
             tcn_gan = TCNGAN(
                 state_dim=state_dim,
                 noise_dim=noise_dim,
@@ -389,60 +489,60 @@ if __name__ == "__main__":
         
         # Load LSTM-GAN if it exists
         lstm_gan_path = os.path.join(DATA_DIR, 'lstm_gan_model')
-        if os.path.exists(lstm_gan_path):
-            try:
-                logger.info(f"Loading LSTM-GAN from {lstm_gan_path}")
-                lstm_gan = LSTMGAN(
-                    state_dim=state_dim,
-                    noise_dim=noise_dim,
-                    output_dim=output_dim,
-                    generator_units=[64, 128],
-                    discriminator_units=[128, 64],
-                    use_pca=True,
-                    n_pca_components=output_dim,
-                    log_dir=LOG_DIR
-                )
-                lstm_gan.load(lstm_gan_path)
-                # Compile with dummy optimizers (needed for model to work, but not used for inference)
-                lstm_gan.compile(
-                    generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
-                    discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
-                )
-                models['LSTM-GAN'] = lstm_gan
-                logger.info("LSTM-GAN loaded successfully")
-            except Exception as e:
-                logger.error(f"Failed to load LSTM-GAN: {e}")
-        else:
-            logger.warning(f"LSTM-GAN model not found at {lstm_gan_path}")
+        try:
+            logger.info(f"Loading LSTM-GAN from {lstm_gan_path}")
+            lstm_gan = LSTMGAN(
+                state_dim=state_dim,
+                noise_dim=noise_dim,
+                output_dim=output_dim,
+                generator_units=[64, 128],
+                discriminator_units=[128, 64],
+                use_pca=True,
+                n_pca_components=output_dim,
+                random_seed=RANDOM_SEED,
+                gen_grad_clip=GEN_GRAD_CLIP,
+                disc_grad_clip=DISC_GRAD_CLIP,
+                log_dir=LOG_DIR
+            )
+            lstm_gan.load(lstm_gan_path)
+            # Compile with dummy optimizers (needed for model to work, but not used for inference)
+            lstm_gan.compile(
+                generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE_GEN, beta_1=BETA_PARAM),
+                discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE_DES, beta_1=BETA_PARAM)
+            )
+            models['LSTM-GAN'] = lstm_gan
+            logger.info("LSTM-GAN loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load LSTM-GAN: {e}")
         
         # Load TCN-GAN if it exists
-        tcn_gan_path = os.path.join(DATA_DIR, 'tcn_gan_model')
-        if os.path.exists(tcn_gan_path):
-            try:
-                logger.info(f"Loading TCN-GAN from {tcn_gan_path}")
-                tcn_gan = TCNGAN(
-                    state_dim=state_dim,
-                    noise_dim=noise_dim,
-                    output_dim=output_dim,
-                    generator_filters=[64, 128, 64],
-                    discriminator_filters=[64, 128, 64],
-                    kernel_size=3,
-                    use_pca=True,
-                    n_pca_components=output_dim,
-                    log_dir=LOG_DIR
-                )
-                tcn_gan.load(tcn_gan_path)
-                # Compile with dummy optimizers (needed for model to work, but not used for inference)
-                tcn_gan.compile(
-                    generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
-                    discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
-                )
-                models['TCN-GAN'] = tcn_gan
-                logger.info("TCN-GAN loaded successfully")
-            except Exception as e:
-                logger.error(f"Failed to load TCN-GAN: {e}")
-        else:
-            logger.warning(f"TCN-GAN model not found at {tcn_gan_path}")
+        # tcn_gan_path = os.path.join(DATA_DIR, 'tcn_gan_model')
+        # if os.path.exists(tcn_gan_path):
+        #     try:
+        #         logger.info(f"Loading TCN-GAN from {tcn_gan_path}")
+        #         tcn_gan = TCNGAN(
+        #             state_dim=state_dim,
+        #             noise_dim=noise_dim,
+        #             output_dim=output_dim,
+        #             generator_filters=[64, 128, 64],
+        #             discriminator_filters=[64, 128, 64],
+        #             kernel_size=3,
+        #             use_pca=True,
+        #             n_pca_components=output_dim,
+        #             log_dir=LOG_DIR
+        #         )
+        #         tcn_gan.load(tcn_gan_path)
+        #         # Compile with dummy optimizers (needed for model to work, but not used for inference)
+        #         tcn_gan.compile(
+        #             generator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM),
+        #             discriminator_optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE, beta_1=BETA_PARAM)
+        #         )
+        #         models['TCN-GAN'] = tcn_gan
+        #         logger.info("TCN-GAN loaded successfully")
+        #     except Exception as e:
+        #         logger.error(f"Failed to load TCN-GAN: {e}")
+        # else:
+        #     logger.warning(f"TCN-GAN model not found at {tcn_gan_path}")
         
         if not models:
             logger.warning("No models were loaded. Make sure models exist in DATA_DIR or set TRAIN_GAN=True")
@@ -549,5 +649,226 @@ if __name__ == "__main__":
     
     # Save comparison to CSV
     comparison_df.to_csv(os.path.join(DATA_DIR, 'model_comparison.csv'))
+    
+    # Save real and generated data, transform to IVs, and calculate Black-Scholes prices
+    if STAGES_CONFIG["SIMULATE_AND_EVALUATE"] and models:
+        logger.info("Saving real and generated data, transforming to IVs, and calculating Black-Scholes prices...")
+        
+        # Create directories for saving data
+        real_data_dir = os.path.join(DATA_DIR, 'real_data')
+        generated_data_dir = os.path.join(DATA_DIR, 'generated_data')
+        make_dir_if_not_exists(real_data_dir)
+        make_dir_if_not_exists(generated_data_dir)
+        
+        # Ensure data_cache is available (reload if needed)
+        if 'data_cache' not in locals() or not hasattr(data_cache, 'dates_list'):
+            logger.info("Loading data cache for dates and implied volatilities...")
+            data_cache = DataCache(DATA_DIR, TICKER)
+            data_cache.load_implied_vols_from_data_dir(START_DATE, END_DATE)
+        
+        # Get dates for the data we're processing
+        dates_subset = data_cache.dates_list[:GENERATE_LENGTH] if hasattr(data_cache, 'dates_list') and len(data_cache.dates_list) >= GENERATE_LENGTH else []
+        
+        # Load underlying stock prices
+        stock_data_path = os.path.join(DATA_DIR, f"{TICKER}_stock_data.csv")
+        underlying_prices = None
+        if os.path.exists(stock_data_path):
+            stock_df = pd.read_csv(stock_data_path, index_col=0, parse_dates=True)
+            stock_df.index = pd.to_datetime(stock_df.index).date
+            underlying_prices = []
+            for date in dates_subset:
+                if date in stock_df.index:
+                    underlying_prices.append(stock_df.loc[date, 'Close'])
+                else:
+                    # Find closest date
+                    closest_idx = stock_df.index.get_indexer([date], method='nearest')[0]
+                    underlying_prices.append(stock_df.iloc[closest_idx]['Close'])
+            logger.info(f"Loaded underlying prices for {len(underlying_prices)} dates")
+        else:
+            raise FileNotFoundError(f"Stock data file not found at {stock_data_path}. Please ensure the stock data file exists.")
+        
+        # Validate that we have enough underlying prices
+        if len(underlying_prices) < GENERATE_LENGTH:
+            raise ValueError(f"Insufficient underlying prices: need {GENERATE_LENGTH} prices but only found {len(underlying_prices)} in stock data file.")
+        
+        # Load EFFR data and create date-to-rate mapping
+        effr_path = os.path.join(current_wd, "raw_data", "EFFR.csv")
+        
+        if not os.path.exists(effr_path):
+            raise FileNotFoundError(f"EFFR data file not found at {effr_path}. Please ensure the EFFR.csv file exists in raw_data/ directory.")
+        
+        if len(dates_subset) == 0:
+            raise ValueError(f"No dates available for risk-free rate lookup. Expected {GENERATE_LENGTH} dates but found 0.")
+        
+        risk_free_rates = []
+        try:
+            effr_df = pd.read_csv(effr_path, parse_dates=['observation_date'])
+            effr_df['date'] = pd.to_datetime(effr_df['observation_date']).dt.date
+            effr_df = effr_df[['date', 'EFFR']].dropna()
+            
+            if len(effr_df) == 0:
+                raise ValueError(f"EFFR data file at {effr_path} is empty or contains no valid data.")
+            
+            # Get risk-free rate for each date
+            for date in dates_subset:
+                date_matches = effr_df[effr_df['date'] == date]
+                if len(date_matches) > 0:
+                    rfr = float(date_matches['EFFR'].iloc[0]) / 100.0  # Convert percentage to decimal
+                else:
+                    # Find closest date
+                    date_diffs = (effr_df['date'] - date).abs()
+                    closest_idx = date_diffs.idxmin()
+                    rfr = float(effr_df.loc[closest_idx, 'EFFR']) / 100.0
+                risk_free_rates.append(rfr)
+            
+            logger.info(f"Loaded {len(risk_free_rates)} risk-free rates from EFFR for dates")
+        except Exception as e:
+            raise Exception(f"Could not load EFFR data from {effr_path}: {e}")
+        
+        # Validate that we have enough risk-free rates
+        if len(risk_free_rates) < GENERATE_LENGTH:
+            raise ValueError(f"Insufficient risk-free rates: need {GENERATE_LENGTH} rates but only found {len(risk_free_rates)} in EFFR data.")
+        
+        # Convert relative strikes to absolute strikes (K = relative_strike * S)
+        relative_strikes = STRIKES  # These are already relative strikes (K/S)
+        
+        # Convert maturities from days to years
+        maturities_years = np.array(MATURITIES) / 365.0
+        
+        # Save real log-IV data
+        real_log_IV_reshaped = real_log_IV_subset  # Shape: (GENERATE_LENGTH, n_strikes, n_maturities)
+        real_log_IV_df = pd.DataFrame(
+            real_log_IV_reshaped.reshape(GENERATE_LENGTH, -1),
+            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+        )
+        real_log_IV_df.to_csv(os.path.join(real_data_dir, 'log_implied_vols.csv'), index=False)
+        logger.info(f"Saved real log-IV data to {real_data_dir}/log_implied_vols.csv")
+        
+        # Transform real log-IVs to IVs (exponential)
+        real_IVs = np.exp(real_log_IV_reshaped)  # Shape: (GENERATE_LENGTH, n_strikes, n_maturities)
+        real_IV_df = pd.DataFrame(
+            real_IVs.reshape(GENERATE_LENGTH, -1),
+            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+        )
+        real_IV_df.to_csv(os.path.join(real_data_dir, 'implied_vols.csv'), index=False)
+        logger.info(f"Saved real IV data to {real_data_dir}/implied_vols.csv")
+        
+        # Verify real implied vols match input implied vols
+        # Reload original IVs if not available (in case APPLY_PCA stage was skipped)
+        if 'implied_vols_array' not in locals():
+            logger.info("Reloading original implied volatilities for verification...")
+            original_implied_vols_array = data_cache.get_implied_vols_array()
+            original_implied_vols_array = remove_nan_values_nadaraya_watson(original_implied_vols_array, STRIKES, MATURITIES)
+        else:
+            original_implied_vols_array = implied_vols_array
+        
+        original_IVs_subset = original_implied_vols_array[:GENERATE_LENGTH]  # Original IVs before log transform
+        iv_diff = np.abs(real_IVs - original_IVs_subset)
+        max_diff = np.nanmax(iv_diff)
+        mean_diff = np.nanmean(iv_diff)
+        logger.info(f"Verification: Real IVs vs Original IVs - Max difference: {max_diff:.6f}, Mean difference: {mean_diff:.6f}")
+        
+        if max_diff > 1e-5:
+            logger.warning(f"Real IVs differ from original IVs by more than 1e-5. This may indicate a transformation issue.")
+        else:
+            logger.info("Real IVs match original IVs (within tolerance)")
+        
+        # Convert real IVs to option prices using Black-Scholes
+        real_prices = np.zeros_like(real_IVs)
+        for t in range(GENERATE_LENGTH):
+            if t >= len(underlying_prices):
+                raise IndexError(f"Index {t} out of range for underlying_prices (length: {len(underlying_prices)}). Expected at least {GENERATE_LENGTH} prices.")
+            S = underlying_prices[t]
+            if np.isnan(S):
+                raise ValueError(f"Underlying price at index {t} (date: {dates_subset[t] if t < len(dates_subset) else 'unknown'}) is NaN. Stock data contains invalid values.")
+            
+            # Use risk-free rate for this specific date
+            if t >= len(risk_free_rates):
+                raise IndexError(f"Index {t} out of range for risk_free_rates (length: {len(risk_free_rates)}). Expected at least {GENERATE_LENGTH} rates.")
+            r = risk_free_rates[t]
+            if np.isnan(r):
+                raise ValueError(f"Risk-free rate at index {t} (date: {dates_subset[t] if t < len(dates_subset) else 'unknown'}) is NaN. EFFR data contains invalid values.")
+            
+            for i, rel_strike in enumerate(relative_strikes):
+                K = S * rel_strike  # Absolute strike
+                for j, T in enumerate(maturities_years):
+                    sigma = real_IVs[t, i, j]
+                    if not np.isnan(sigma) and sigma > 0:
+                        try:
+                            price = bs_price(S, K, T, r, sigma, option_type='calls')
+                            real_prices[t, i, j] = price
+                        except Exception as e:
+                            logger.debug(f"Error calculating BS price at t={t}, strike={rel_strike}, T={T}: {e}")
+                            real_prices[t, i, j] = np.nan
+                    else:
+                        real_prices[t, i, j] = np.nan
+        
+        real_prices_df = pd.DataFrame(
+            real_prices.reshape(GENERATE_LENGTH, -1),
+            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+        )
+        real_prices_df.to_csv(os.path.join(real_data_dir, 'option_prices.csv'), index=False)
+        logger.info(f"Saved real option prices to {real_data_dir}/option_prices.csv")
+        
+        # Process each model's generated data
+        for model_name, generated_log_IVs in generated_sequences.items():
+            model_generated_dir = os.path.join(generated_data_dir, model_name.lower().replace('-', '_'))
+            make_dir_if_not_exists(model_generated_dir)
+            
+            # Save generated log-IV data
+            generated_log_IV_df = pd.DataFrame(
+                generated_log_IVs.reshape(GENERATE_LENGTH, -1),
+                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+            )
+            generated_log_IV_df.to_csv(os.path.join(model_generated_dir, 'log_implied_vols.csv'), index=False)
+            logger.info(f"Saved {model_name} generated log-IV data to {model_generated_dir}/log_implied_vols.csv")
+            
+            # Transform generated log-IVs to IVs (exponential)
+            generated_IVs = np.exp(generated_log_IVs)  # Shape: (GENERATE_LENGTH, n_strikes, n_maturities)
+            generated_IV_df = pd.DataFrame(
+                generated_IVs.reshape(GENERATE_LENGTH, -1),
+                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+            )
+            generated_IV_df.to_csv(os.path.join(model_generated_dir, 'implied_vols.csv'), index=False)
+            logger.info(f"Saved {model_name} generated IV data to {model_generated_dir}/implied_vols.csv")
+            
+            # Convert generated IVs to option prices using Black-Scholes
+            generated_prices = np.zeros_like(generated_IVs)
+            for t in range(GENERATE_LENGTH):
+                if t >= len(underlying_prices):
+                    raise IndexError(f"Index {t} out of range for underlying_prices (length: {len(underlying_prices)}). Expected at least {GENERATE_LENGTH} prices.")
+                S = underlying_prices[t]
+                if np.isnan(S):
+                    raise ValueError(f"Underlying price at index {t} (date: {dates_subset[t] if t < len(dates_subset) else 'unknown'}) is NaN. Stock data contains invalid values.")
+                
+                # Use risk-free rate for this specific date
+                if t >= len(risk_free_rates):
+                    raise IndexError(f"Index {t} out of range for risk_free_rates (length: {len(risk_free_rates)}). Expected at least {GENERATE_LENGTH} rates.")
+                r = risk_free_rates[t]
+                if np.isnan(r):
+                    raise ValueError(f"Risk-free rate at index {t} (date: {dates_subset[t] if t < len(dates_subset) else 'unknown'}) is NaN. EFFR data contains invalid values.")
+                
+                for i, rel_strike in enumerate(relative_strikes):
+                    K = S * rel_strike  # Absolute strike
+                    for j, T in enumerate(maturities_years):
+                        sigma = generated_IVs[t, i, j]
+                        if not np.isnan(sigma) and sigma > 0:
+                            try:
+                                price = bs_price(S, K, T, r, sigma, option_type='calls')
+                                generated_prices[t, i, j] = price
+                            except Exception as e:
+                                logger.debug(f"Error calculating BS price for {model_name} at t={t}, strike={rel_strike}, T={T}: {e}")
+                                generated_prices[t, i, j] = np.nan
+                        else:
+                            generated_prices[t, i, j] = np.nan
+            
+            generated_prices_df = pd.DataFrame(
+                generated_prices.reshape(GENERATE_LENGTH, -1),
+                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+            )
+            generated_prices_df.to_csv(os.path.join(model_generated_dir, 'option_prices.csv'), index=False)
+            logger.info(f"Saved {model_name} generated option prices to {model_generated_dir}/option_prices.csv")
+        
+        logger.info("Finished saving all data and calculating Black-Scholes prices.")
 
 

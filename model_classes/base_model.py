@@ -37,7 +37,13 @@ class BaseModel(ABC):
         
         # Create log directory
         self.log_dir = os.path.join(log_dir, self.name)
-        make_dir_if_not_exists(self.log_dir)
+        try:
+            make_dir_if_not_exists(self.log_dir)
+        except Exception as e:
+            print(f"Warning: Could not create log directory {self.log_dir}: {e}")
+            # Fallback to just using the base log_dir
+            self.log_dir = log_dir
+            make_dir_if_not_exists(self.log_dir)
         
         # Initialize model components
         self.model = None
@@ -372,7 +378,18 @@ class BaseModel(ABC):
             Path to save the weights
         """
         if self.model is not None:
-            self.model.save_weights(filepath)
+            # Ensure the directory exists before saving
+            dir_path = os.path.dirname(filepath)
+            if dir_path:  # Only create directory if path contains a directory
+                make_dir_if_not_exists(dir_path)
+            try:
+                self.model.save_weights(filepath)
+            except Exception as e:
+                print(f"Warning: Failed to save weights to {filepath}: {e}")
+                # Try saving to log_dir as fallback
+                fallback_path = os.path.join(self.log_dir, os.path.basename(filepath))
+                print(f"Attempting to save to fallback path: {fallback_path}")
+                self.model.save_weights(fallback_path)
     
     def load_weights(self, filepath):
         """
