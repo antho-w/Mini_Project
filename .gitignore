@@ -5,8 +5,8 @@ __pycache__/
 # Virtual environment (commonly named .venv)
 .venv/
 
-# Large file
-*/output/20251119/logs/run_20251119_135857.log
+# Large file - This was the log to run preprocess_data.py
+**/output/20251119/logs/run_20251119_135857.log
 
 # Optional: OS files
 .DS_Store
