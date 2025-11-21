@@ -7,6 +7,7 @@ __pycache__/
 
 # Large file - This was the log to run preprocess_data.py
 **/output/20251119/logs/run_20251119_135857.log
+**/output/final_data/logs/run_20251119_135857.log
 
 # Optional: OS files
 .DS_Store
