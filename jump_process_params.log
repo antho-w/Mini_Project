@@ -430,5 +430,833 @@
         "jump_mean": -0.9999999999999986,
         "jump_std": 1.390045142539239,
         "jump_intensity": 0.8797624373595476
+    },
+    "2016-11-07": {
+        "spot_price": 4773.72998046875,
+        "risk_free_rate": 0.0040999999999999995,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.22257674063583072,
+        "jump_mean": -0.6818962556254627,
+        "jump_std": 0.9777250493731939,
+        "jump_intensity": 2.033361291590291
+    },
+    "2016-11-14": {
+        "spot_price": 4702.0400390625,
+        "risk_free_rate": 0.0040999999999999995,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.8835739037768585,
+        "jump_std": 1.3213788941820674,
+        "jump_intensity": 1.0639599275712244
+    },
+    "2016-11-21": {
+        "spot_price": 4859.0,
+        "risk_free_rate": 0.0040999999999999995,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.1979241202420327,
+        "jump_mean": -0.662143359754975,
+        "jump_std": 1.010833365625446,
+        "jump_intensity": 1.9563665717384418
+    },
+    "2016-11-28": {
+        "spot_price": 4857.02001953125,
+        "risk_free_rate": 0.0040999999999999995,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.20146269151075422,
+        "jump_mean": -0.5766708129655843,
+        "jump_std": 0.9537929196473606,
+        "jump_intensity": 2.4440117633886245
+    },
+    "2016-12-05": {
+        "spot_price": 4778.14013671875,
+        "risk_free_rate": 0.0040999999999999995,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.20235165817764442,
+        "jump_mean": -0.6869542490789915,
+        "jump_std": 1.018602460498245,
+        "jump_intensity": 1.90286807593214
+    },
+    "2016-12-12": {
+        "spot_price": 4874.2998046875,
+        "risk_free_rate": 0.0040999999999999995,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.19289347736782178,
+        "jump_mean": -0.7127727870734372,
+        "jump_std": 1.0443853534185694,
+        "jump_intensity": 1.74620097141032
+    },
+    "2016-12-19": {
+        "spot_price": 4934.85009765625,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.2325420445576589,
+        "jump_mean": -0.44823066626939223,
+        "jump_std": 0.8306054117993555,
+        "jump_intensity": 3.4785636224804026
+    },
+    "2017-01-09": {
+        "spot_price": 5024.89990234375,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.22118621143593709,
+        "jump_mean": -0.423578171454021,
+        "jump_std": 0.8286942017287972,
+        "jump_intensity": 3.7235873556669215
+    },
+    "2017-01-23": {
+        "spot_price": 5065.7001953125,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.222171363103325,
+        "jump_mean": -0.4364988194359586,
+        "jump_std": 0.8361940711351069,
+        "jump_intensity": 3.50995371001767
+    },
+    "2017-01-30": {
+        "spot_price": 5129.330078125,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.2239267056193547,
+        "jump_mean": -0.44274755359102325,
+        "jump_std": 0.8360736397915279,
+        "jump_intensity": 3.5317274966411403
+    },
+    "2017-02-06": {
+        "spot_price": 5167.9599609375,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.23187033985293362,
+        "jump_mean": -0.5852075275941936,
+        "jump_std": 0.925640029912581,
+        "jump_intensity": 2.455268889238207
+    },
+    "2017-02-13": {
+        "spot_price": 5256.81982421875,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.20662413355845421,
+        "jump_mean": -0.42185373274324167,
+        "jump_std": 0.8414301894175055,
+        "jump_intensity": 3.5529592488600326
+    },
+    "2017-02-27": {
+        "spot_price": 5347.5498046875,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.2201286106533452,
+        "jump_mean": -0.3948039188692688,
+        "jump_std": 0.8010945994870002,
+        "jump_intensity": 4.0383685313427256
+    },
+    "2017-03-06": {
+        "spot_price": 5360.31005859375,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000405733888,
+        "jump_mean": -0.6580624751947598,
+        "jump_std": 1.1431448030343663,
+        "jump_intensity": 1.6752715186794562
+    },
+    "2017-03-13": {
+        "spot_price": 5394.56982421875,
+        "risk_free_rate": 0.0066,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000083268375,
+        "jump_mean": -0.3913007702914095,
+        "jump_std": 0.8826503374747354,
+        "jump_intensity": 2.869452192603746
+    },
+    "2017-03-20": {
+        "spot_price": 5413.31005859375,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000003171,
+        "jump_mean": -0.3522820435976988,
+        "jump_std": 0.8464773673753404,
+        "jump_intensity": 3.8290729756330193
+    },
+    "2017-03-27": {
+        "spot_price": 5374.27001953125,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.2347109543917627,
+        "jump_mean": -0.3871316029259471,
+        "jump_std": 0.7894805718533878,
+        "jump_intensity": 4.170517189505307
+    },
+    "2017-04-03": {
+        "spot_price": 5432.2001953125,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.3607307414585529,
+        "jump_std": 0.8464085688961656,
+        "jump_intensity": 3.359608557280607
+    },
+    "2017-04-10": {
+        "spot_price": 5421.68017578125,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000003808,
+        "jump_mean": -0.4437480498521206,
+        "jump_std": 0.9452451889240823,
+        "jump_intensity": 2.9222732146016632
+    },
+    "2017-04-17": {
+        "spot_price": 5399.2001953125,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.2799435140527936,
+        "jump_mean": -0.30465333679824236,
+        "jump_std": 0.6840060875125235,
+        "jump_intensity": 5.856736016016535
+    },
+    "2017-04-24": {
+        "spot_price": 5508.02978515625,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.23152400958686606,
+        "jump_mean": -0.3293080613027476,
+        "jump_std": 0.7414338287642881,
+        "jump_intensity": 5.000921670019037
+    },
+    "2017-05-01": {
+        "spot_price": 5629.6298828125,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.26090433588633893,
+        "jump_mean": -0.39050522042367714,
+        "jump_std": 0.7665640607543438,
+        "jump_intensity": 4.356194320853484
+    },
+    "2017-05-08": {
+        "spot_price": 5659.06982421875,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.24882835068282488,
+        "jump_std": 0.8471491959987931,
+        "jump_intensity": 5.243904309988562
+    },
+    "2017-05-15": {
+        "spot_price": 5704.47998046875,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000001378045,
+        "jump_mean": -0.33133451336458153,
+        "jump_std": 0.8198903627658364,
+        "jump_intensity": 4.012097640976185
+    },
+    "2017-05-22": {
+        "spot_price": 5699.39990234375,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.23839768008326093,
+        "jump_mean": -0.32104781975424646,
+        "jump_std": 0.7169081300153746,
+        "jump_intensity": 5.232434642127273
+    },
+    "2017-06-05": {
+        "spot_price": 5878.1201171875,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.2584281769986692,
+        "jump_mean": -0.36898414359629567,
+        "jump_std": 0.7558410050327761,
+        "jump_intensity": 4.560868993822058
+    },
+    "2017-06-12": {
+        "spot_price": 5708.18017578125,
+        "risk_free_rate": 0.0091,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.3358169341196094,
+        "jump_mean": -0.35060050603160015,
+        "jump_std": 0.692266324716539,
+        "jump_intensity": 5.401964117142707
+    },
+    "2017-06-19": {
+        "spot_price": 5772.22021484375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01000000000000019,
+        "jump_mean": -0.9999999999999984,
+        "jump_std": 1.3741727580246104,
+        "jump_intensity": 0.7526598182284217
+    },
+    "2017-06-26": {
+        "spot_price": 5777.58984375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010189757943231641,
+        "jump_mean": -1.0,
+        "jump_std": 1.1930685411209883,
+        "jump_intensity": 0.9556882411266029
+    },
+    "2017-07-03": {
+        "spot_price": 5596.9599609375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.11954277893226654,
+        "jump_mean": -0.9999999999999999,
+        "jump_std": 1.1947295106421738,
+        "jump_intensity": 0.9808003751486765
+    },
+    "2017-07-10": {
+        "spot_price": 5694.14990234375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3849302505444352,
+        "jump_intensity": 0.7495036097971789
+    },
+    "2017-07-17": {
+        "spot_price": 5839.740234375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10121956676753678,
+        "jump_mean": -1.0,
+        "jump_std": 1.1945178736080027,
+        "jump_intensity": 0.9758353803541098
+    },
+    "2017-07-24": {
+        "spot_price": 5941.3701171875,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000026,
+        "jump_mean": -1.0,
+        "jump_std": 1.368180068062065,
+        "jump_intensity": 0.7425782269850736
+    },
+    "2017-07-31": {
+        "spot_price": 5880.330078125,
+        "risk_free_rate": 0.010700000000000001,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3543185899867063,
+        "jump_intensity": 0.7708012836549799
+    },
+    "2017-08-07": {
+        "spot_price": 5934.72998046875,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3799888714378632,
+        "jump_intensity": 0.7460924104867451
+    },
+    "2017-08-14": {
+        "spot_price": 5908.169921875,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10962095585674578,
+        "jump_mean": -0.9999999999999918,
+        "jump_std": 1.2007969526558262,
+        "jump_intensity": 0.9765312337876545
+    },
+    "2017-08-21": {
+        "spot_price": 5786.5400390625,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10929989294727205,
+        "jump_mean": -1.0,
+        "jump_std": 1.1843378807317655,
+        "jump_intensity": 0.994098516602407
+    },
+    "2017-08-28": {
+        "spot_price": 5838.080078125,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.2068153484644146,
+        "jump_intensity": 0.9711571779956454
+    },
+    "2017-09-11": {
+        "spot_price": 5980.52978515625,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3705053436822219,
+        "jump_intensity": 0.7664320548747814
+    },
+    "2017-09-18": {
+        "spot_price": 5981.1201171875,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000005524,
+        "jump_mean": -1.0,
+        "jump_std": 1.3675037879027097,
+        "jump_intensity": 0.7496166315911946
+    },
+    "2017-09-25": {
+        "spot_price": 5867.35009765625,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.9999999999999633,
+        "jump_std": 1.2018233044909892,
+        "jump_intensity": 0.9712111325216153
+    },
+    "2017-10-02": {
+        "spot_price": 5981.919921875,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000004,
+        "jump_mean": -1.0,
+        "jump_std": 1.3713055311257791,
+        "jump_intensity": 0.7470234699160125
+    },
+    "2017-10-09": {
+        "spot_price": 6058.52978515625,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.1057677907924837,
+        "jump_mean": -0.9999999999999851,
+        "jump_std": 1.2103124593781602,
+        "jump_intensity": 0.9614104342139211
+    },
+    "2017-10-16": {
+        "spot_price": 6114.52978515625,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.017886516574536694,
+        "jump_mean": -0.9997889614751185,
+        "jump_std": 1.5075390547775336,
+        "jump_intensity": 0.7020783723175751
+    },
+    "2017-10-23": {
+        "spot_price": 6067.830078125,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10912892652991282,
+        "jump_mean": -0.9999999999999961,
+        "jump_std": 1.2166793599604575,
+        "jump_intensity": 0.9625162085578117
+    },
+    "2017-10-30": {
+        "spot_price": 6227.58984375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.013371900716852238,
+        "jump_mean": -0.9999999999999998,
+        "jump_std": 1.184998572333107,
+        "jump_intensity": 0.9664025480944045
+    },
+    "2017-11-06": {
+        "spot_price": 6313.60986328125,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000276,
+        "jump_mean": -0.9999999999999996,
+        "jump_std": 1.3825290929704592,
+        "jump_intensity": 0.7527407121753615
+    },
+    "2017-11-13": {
+        "spot_price": 6316.18017578125,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.12411360056307692,
+        "jump_mean": -1.0,
+        "jump_std": 1.2263415740966204,
+        "jump_intensity": 0.9863088262381874
+    },
+    "2017-11-20": {
+        "spot_price": 6308.60986328125,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10660906161405882,
+        "jump_mean": -0.9999999999999931,
+        "jump_std": 1.2350126752248978,
+        "jump_intensity": 0.9530784523445037
+    },
+    "2017-11-27": {
+        "spot_price": 6405.97021484375,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.11189728994252787,
+        "jump_mean": -1.0,
+        "jump_std": 1.2303374167504197,
+        "jump_intensity": 0.9548366645575358
+    },
+    "2017-12-04": {
+        "spot_price": 6263.7001953125,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.11813770750815222,
+        "jump_mean": -1.0,
+        "jump_std": 1.2093105586580604,
+        "jump_intensity": 0.9770685614022122
+    },
+    "2017-12-11": {
+        "spot_price": 6393.89013671875,
+        "risk_free_rate": 0.0116,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10382064269077008,
+        "jump_mean": -1.0,
+        "jump_std": 1.2260416485306886,
+        "jump_intensity": 0.9590130202028789
+    },
+    "2017-12-18": {
+        "spot_price": 6513.27001953125,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.9999999999999999,
+        "jump_std": 1.38428393732129,
+        "jump_intensity": 0.7489127246752384
+    },
+    "2018-01-08": {
+        "spot_price": 6676.6298828125,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.381711916769452,
+        "jump_intensity": 0.7570556350186014
+    },
+    "2018-01-22": {
+        "spot_price": 6906.27978515625,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.11730730948152737,
+        "jump_mean": -0.9999999999999998,
+        "jump_std": 1.2066677960201786,
+        "jump_intensity": 0.9679547816825788
+    },
+    "2018-01-29": {
+        "spot_price": 6988.31982421875,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.9999999999999999,
+        "jump_std": 1.1943505615346217,
+        "jump_intensity": 0.993214798832585
+    },
+    "2018-02-05": {
+        "spot_price": 6495.919921875,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.19539080027771075,
+        "jump_mean": -1.0,
+        "jump_std": 1.122356941465598,
+        "jump_intensity": 1.0272323689905811
+    },
+    "2018-02-12": {
+        "spot_price": 6523.85009765625,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.15115303964906518,
+        "jump_mean": -0.9999999999999999,
+        "jump_std": 1.195212917452552,
+        "jump_intensity": 1.0883134082785515
+    },
+    "2018-02-26": {
+        "spot_price": 6989.10009765625,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.4012079591574678,
+        "jump_intensity": 0.7847945437891494
+    },
+    "2018-03-05": {
+        "spot_price": 6881.27978515625,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3968893465854644,
+        "jump_intensity": 0.8156489110950478
+    },
+    "2018-03-12": {
+        "spot_price": 7131.1201171875,
+        "risk_free_rate": 0.014199999999999999,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3919193594836916,
+        "jump_intensity": 0.8011002222527828
+    },
+    "2018-03-19": {
+        "spot_price": 6864.8798828125,
+        "risk_free_rate": 0.0143,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.13329429770995,
+        "jump_mean": -1.0,
+        "jump_std": 1.1754322123907275,
+        "jump_intensity": 1.019842797054048
+    },
+    "2018-03-26": {
+        "spot_price": 6753.830078125,
+        "risk_free_rate": 0.0168,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.4059514164651647,
+        "jump_intensity": 0.8243730236171258
+    },
+    "2018-04-02": {
+        "spot_price": 6390.83984375,
+        "risk_free_rate": 0.0168,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000002694,
+        "jump_mean": -0.9999999999999984,
+        "jump_std": 1.406298736477186,
+        "jump_intensity": 0.8472026310157292
+    },
+    "2018-04-09": {
+        "spot_price": 6472.33984375,
+        "risk_free_rate": 0.0169,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000184485,
+        "jump_mean": -0.9999999999996557,
+        "jump_std": 1.4067685939140597,
+        "jump_intensity": 0.833246527466358
+    },
+    "2018-04-16": {
+        "spot_price": 6675.18017578125,
+        "risk_free_rate": 0.0169,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000012,
+        "jump_mean": -0.9999999999999999,
+        "jump_std": 1.397793338696664,
+        "jump_intensity": 0.8108076018474718
+    },
+    "2018-04-23": {
+        "spot_price": 6648.7998046875,
+        "risk_free_rate": 0.017,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.14382661295874197,
+        "jump_mean": -1.0,
+        "jump_std": 1.180189191435312,
+        "jump_intensity": 1.0835945615633997
+    },
+    "2018-04-30": {
+        "spot_price": 6605.56982421875,
+        "risk_free_rate": 0.0169,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000071,
+        "jump_mean": -0.9999999999999997,
+        "jump_std": 1.4013571055730194,
+        "jump_intensity": 0.797289166453427
+    },
+    "2018-05-07": {
+        "spot_price": 6821.8701171875,
+        "risk_free_rate": 0.017,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000727,
+        "jump_mean": -0.9999999999999966,
+        "jump_std": 1.392922186493764,
+        "jump_intensity": 0.7857644848376217
+    },
+    "2018-05-14": {
+        "spot_price": 6964.3701171875,
+        "risk_free_rate": 0.017,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000134,
+        "jump_mean": -0.9999999999999997,
+        "jump_std": 1.3981591979663475,
+        "jump_intensity": 0.8041039298079681
+    },
+    "2018-05-21": {
+        "spot_price": 6905.52978515625,
+        "risk_free_rate": 0.017,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3927222892893496,
+        "jump_intensity": 0.7526089626160138
+    },
+    "2018-06-04": {
+        "spot_price": 7143.56982421875,
+        "risk_free_rate": 0.017,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000003752,
+        "jump_mean": -1.0,
+        "jump_std": 1.3903159826170446,
+        "jump_intensity": 0.7749620459417286
+    },
+    "2018-06-11": {
+        "spot_price": 7168.47998046875,
+        "risk_free_rate": 0.017,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.12472489716497707,
+        "jump_mean": -1.0,
+        "jump_std": 1.1897976640668648,
+        "jump_intensity": 1.0057540755038221
+    },
+    "2018-06-18": {
+        "spot_price": 7251.41015625,
+        "risk_free_rate": 0.019,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000000004,
+        "jump_mean": -1.0,
+        "jump_std": 1.367775923159154,
+        "jump_intensity": 0.7926276207132136
+    },
+    "2018-06-25": {
+        "spot_price": 7038.169921875,
+        "risk_free_rate": 0.0192,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.1202302629760989,
+        "jump_mean": -1.0,
+        "jump_std": 1.2082934355707844,
+        "jump_intensity": 1.0278304290582025
+    },
+    "2018-07-02": {
+        "spot_price": 7097.81982421875,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.13408433601008343,
+        "jump_mean": -1.0,
+        "jump_std": 1.18460631017416,
+        "jump_intensity": 1.0826067627333322
+    },
+    "2018-07-09": {
+        "spot_price": 7276.0,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000052646,
+        "jump_mean": -1.0,
+        "jump_std": 1.3873011525845893,
+        "jump_intensity": 0.7798467239202788
+    },
+    "2018-07-16": {
+        "spot_price": 7357.89990234375,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.1388791722988704,
+        "jump_mean": -1.0,
+        "jump_std": 1.2252131609926487,
+        "jump_intensity": 0.998468883559075
+    },
+    "2018-07-23": {
+        "spot_price": 7371.77978515625,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.013328179742982036,
+        "jump_mean": -0.9999999999999999,
+        "jump_std": 1.1608199955372287,
+        "jump_intensity": 1.0154357924350326
+    },
+    "2018-07-30": {
+        "spot_price": 7193.10009765625,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.9999999999999984,
+        "jump_std": 1.3884084887098318,
+        "jump_intensity": 0.7944607557629196
+    },
+    "2018-08-06": {
+        "spot_price": 7438.990234375,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.10986627951995845,
+        "jump_mean": -0.9999999999999997,
+        "jump_std": 1.1939992855558832,
+        "jump_intensity": 0.9733418743595094
+    },
+    "2018-08-13": {
+        "spot_price": 7401.169921875,
+        "risk_free_rate": 0.0191,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.3924094819711463,
+        "jump_intensity": 0.7738081388755896
+    },
+    "2018-08-20": {
+        "spot_price": 7371.419921875,
+        "risk_free_rate": 0.0192,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.2075117375071147,
+        "jump_intensity": 1.0199584727759452
+    },
+    "2018-08-27": {
+        "spot_price": 7559.1298828125,
+        "risk_free_rate": 0.0192,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -1.0,
+        "jump_std": 1.395375573234421,
+        "jump_intensity": 0.7750480973759776
+    },
+    "2018-09-10": {
+        "spot_price": 7447.68017578125,
+        "risk_free_rate": 0.0192,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.13443138444254446,
+        "jump_mean": -1.0,
+        "jump_std": 1.185659387229969,
+        "jump_intensity": 1.0162894308952761
+    },
+    "2018-09-17": {
+        "spot_price": 7434.72998046875,
+        "risk_free_rate": 0.0192,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000015693745,
+        "jump_mean": -1.0,
+        "jump_std": 1.401699518736613,
+        "jump_intensity": 0.7920039583440268
+    },
+    "2018-09-24": {
+        "spot_price": 7548.75,
+        "risk_free_rate": 0.019299999999999998,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.13421709927978012,
+        "jump_mean": -1.0,
+        "jump_std": 1.2280856112661611,
+        "jump_intensity": 0.9948617985654434
+    },
+    "2018-10-01": {
+        "spot_price": 7645.4501953125,
+        "risk_free_rate": 0.0218,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.14717405226935829,
+        "jump_mean": -1.0,
+        "jump_std": 1.2383787016142216,
+        "jump_intensity": 1.0134473343316066
+    },
+    "2018-10-08": {
+        "spot_price": 7352.81982421875,
+        "risk_free_rate": 0.0218,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.01,
+        "jump_mean": -0.9999999935238275,
+        "jump_std": 1.4040643448952548,
+        "jump_intensity": 0.8119759177877214
+    },
+    "2018-10-15": {
+        "spot_price": 7068.669921875,
+        "risk_free_rate": 0.0218,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.16070833056358272,
+        "jump_mean": -1.0,
+        "jump_std": 1.2163234578834061,
+        "jump_intensity": 1.0282937112753419
+    },
+    "2018-10-22": {
+        "spot_price": 7141.2099609375,
+        "risk_free_rate": 0.0219,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.010000000000015366,
+        "jump_mean": -0.9999999999999462,
+        "jump_std": 1.4051075360916638,
+        "jump_intensity": 0.8261458816412642
+    },
+    "2018-10-29": {
+        "spot_price": 6713.89990234375,
+        "risk_free_rate": 0.022000000000000002,
+        "time_to_maturity": 0.0821917808219178,
+        "volatility": 0.17584269776275546,
+        "jump_mean": -1.0,
+        "jump_std": 1.214122231336099,
+        "jump_intensity": 1.0352746675776336
     }
 }
