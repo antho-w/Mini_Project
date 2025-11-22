@@ -634,6 +634,8 @@ if __name__ == "__main__":
                 results,
                 real_log_IV_flat,
                 generated_log_IV_flat,
+                strikes=STRIKES,
+                maturities=MATURITIES,
                 save_path=os.path.join(PLOT_DIR, model_name.lower())
             )
         

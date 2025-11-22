@@ -274,7 +274,8 @@ def plot_cross_correlation_heatmap(correlation_matrix, title='Cross-Correlation 
     return fig, ax
 
 
-def plot_cross_correlation_comparison(real_corr, generated_corr, title='Cross-Correlation Comparison'):
+def plot_cross_correlation_comparison(real_corr, generated_corr, title='Cross-Correlation Comparison', 
+                                     data_index=None, strikes=None, maturities=None):
     """
     Plot comparison of cross-correlation matrices.
     
@@ -286,12 +287,47 @@ def plot_cross_correlation_comparison(real_corr, generated_corr, title='Cross-Co
         Cross-correlation matrix of generated data
     title : str
         Plot title
+    data_index : list, optional
+        List of labels for the features (e.g., ['K=0.8, M=30', 'K=0.8, M=60', ...])
+        If None, will try to construct from strikes and maturities, or use numeric indices
+    strikes : list, optional
+        List of strike values (used to construct labels if data_index is None)
+    maturities : list, optional
+        List of maturity values (used to construct labels if data_index is None)
         
     Returns:
     --------
     tuple
         (fig, axes) containing figure and axes objects
     """
+    # Construct labels if not provided
+    if data_index is None:
+        if strikes is not None and maturities is not None:
+            # Construct labels from strikes and maturities
+            data_index = [f'K={s}, M={m}' for s in strikes for m in maturities]
+        else:
+            # Use numeric indices as fallback
+            n_features = real_corr.shape[0]
+            data_index = [f'Feature {i}' for i in range(n_features)]
+    
+    # Truncate labels if needed (to avoid overcrowding)
+    n_features = real_corr.shape[0]
+    if len(data_index) != n_features:
+        # If data_index doesn't match, use numeric indices
+        data_index = [f'Feature {i}' for i in range(n_features)]
+    
+    # For large matrices, show only every nth label to avoid overcrowding
+    if n_features > 20:
+        # Show labels but rotate them and reduce frequency
+        tick_step = max(1, n_features // 20)
+        tick_positions = list(range(0, n_features, tick_step))
+        tick_labels = [data_index[i] for i in tick_positions]
+        show_all_labels = False
+    else:
+        tick_positions = list(range(n_features))
+        tick_labels = data_index
+        show_all_labels = True
+    
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     
     # Plot real correlation matrix
@@ -302,8 +338,20 @@ def plot_cross_correlation_comparison(real_corr, generated_corr, title='Cross-Co
         vmax=1, 
         center=0,
         annot=False,
+        xticklabels=tick_labels if show_all_labels else False,
+        yticklabels=tick_labels if show_all_labels else False,
         ax=axes[0]
     )
+    if not show_all_labels:
+        # Set ticks manually for large matrices
+        axes[0].set_xticks(tick_positions)
+        axes[0].set_xticklabels(tick_labels, rotation=90, fontsize=8)
+        axes[0].set_yticks(tick_positions)
+        axes[0].set_yticklabels(tick_labels, rotation=0, fontsize=8)
+    else:
+        # Rotate labels for readability
+        axes[0].tick_params(axis='x', rotation=90, labelsize=8)
+        axes[0].tick_params(axis='y', rotation=0, labelsize=8)
     axes[0].set_title('Real Data')
     
     # Plot generated correlation matrix
@@ -314,8 +362,18 @@ def plot_cross_correlation_comparison(real_corr, generated_corr, title='Cross-Co
         vmax=1, 
         center=0,
         annot=False,
+        xticklabels=tick_labels if show_all_labels else False,
+        yticklabels=tick_labels if show_all_labels else False,
         ax=axes[1]
     )
+    if not show_all_labels:
+        axes[1].set_xticks(tick_positions)
+        axes[1].set_xticklabels(tick_labels, rotation=90, fontsize=8)
+        axes[1].set_yticks(tick_positions)
+        axes[1].set_yticklabels(tick_labels, rotation=0, fontsize=8)
+    else:
+        axes[1].tick_params(axis='x', rotation=90, labelsize=8)
+        axes[1].tick_params(axis='y', rotation=0, labelsize=8)
     axes[1].set_title('Generated Data')
     
     # Plot difference
@@ -325,8 +383,18 @@ def plot_cross_correlation_comparison(real_corr, generated_corr, title='Cross-Co
         cmap='coolwarm',
         center=0,
         annot=False,
+        xticklabels=tick_labels if show_all_labels else False,
+        yticklabels=tick_labels if show_all_labels else False,
         ax=axes[2]
     )
+    if not show_all_labels:
+        axes[2].set_xticks(tick_positions)
+        axes[2].set_xticklabels(tick_labels, rotation=90, fontsize=8)
+        axes[2].set_yticks(tick_positions)
+        axes[2].set_yticklabels(tick_labels, rotation=0, fontsize=8)
+    else:
+        axes[2].tick_params(axis='x', rotation=90, labelsize=8)
+        axes[2].tick_params(axis='y', rotation=0, labelsize=8)
     axes[2].set_title('Difference (Real - Generated)')
     
     plt.suptitle(title, fontsize=16)
@@ -421,6 +489,48 @@ def plot_qq_comparison(real_data, generated_data, feature_idx=0, title='Q-Q Plot
     
     return fig, ax
 
+def plot_empirical_cdf(real_data, generated_data, feature_idx=0, title="Empirical CDF Comparison"):
+    """
+    Plot the empirical cumulative distribution function (CDF) of generated data against real data.
+
+    Parameters:
+    -----------
+    real_data : ndarray
+        Real data with shape (n_samples, n_features)
+    generated_data : ndarray
+        Generated data with shape (n_samples, n_features)
+    feature_idx : int
+        Index of feature to plot
+    title : str
+        Plot title
+
+    Returns:
+    --------
+    tuple
+        (fig, ax) containing figure and axis objects
+    """
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    real = real_data[:, feature_idx]
+    generated = generated_data[:, feature_idx]
+
+    real_sorted = np.sort(real)
+    generated_sorted = np.sort(generated)
+    # The ECDF values
+    real_ecdf = np.arange(1, len(real_sorted) + 1) / len(real_sorted)
+    generated_ecdf = np.arange(1, len(generated_sorted) + 1) / len(generated_sorted)
+
+    ax.step(real_sorted, real_ecdf, where='post', label="Real", color="blue", lw=2)
+    ax.step(generated_sorted, generated_ecdf, where='post', label="Generated", color="red", lw=2, alpha=0.75)
+
+    ax.set_xlabel('Value')
+    ax.set_ylabel('Empirical CDF')
+    ax.set_title(f"{title} (Feature {feature_idx})")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    return fig, ax
+
 
 def plot_volatility_clustering(real_vol_acf, generated_vol_acf, feature_idx=0, lags=10, 
                               title='Volatility Clustering Comparison'):
@@ -471,7 +581,7 @@ def plot_volatility_clustering(real_vol_acf, generated_vol_acf, feature_idx=0, l
 
 
 def create_evaluation_dashboard(evaluation_results, real_data, generated_data, 
-                               feature_indices=None, save_path=None):
+                               feature_indices=None, strikes=None, maturities=None, save_path=None):
     """
     Create a comprehensive evaluation dashboard with multiple plots.
     
@@ -485,6 +595,12 @@ def create_evaluation_dashboard(evaluation_results, real_data, generated_data,
         Generated data with shape (n_samples, n_features)
     feature_indices : list, optional
         List of feature indices to plot (defaults to first 4 features)
+    data_index : list, optional
+        List of data indices that correspond to the real and generated data (defaults to numeric indices)
+    strikes : list, optional
+        List of strike values (used to construct feature labels for correlation plots)
+    maturities : list, optional
+        List of maturity values (used to construct feature labels for correlation plots)
     save_path : str, optional
         Path to save the dashboard
         
@@ -504,36 +620,47 @@ def create_evaluation_dashboard(evaluation_results, real_data, generated_data,
         title='Real vs Generated Time Series Comparison'
     )[0]
     
-    # Distribution comparison for first feature
-    figures['distribution'] = plot_distribution_comparison(
-        real_data, generated_data, feature_idx=feature_indices[0],
-        title='Distribution Comparison'
-    )[0]
+    # Construct feature labels for correlation plots if strikes and maturities are provided
+    feature_labels = None
+    if strikes is not None and maturities is not None:
+        feature_labels = [f'K={s}, M={m}' for s in strikes for m in maturities]
+        # Ensure the length matches the number of features
+        if len(feature_labels) != real_data.shape[1]:
+            feature_labels = None  # Use default if mismatch
     
-    # QQ plot for first feature
-    figures['qq_plot'] = plot_qq_comparison(
-        real_data, generated_data, feature_idx=feature_indices[0],
-        title='Q-Q Plot Comparison'
-    )[0]
-    
-    # Autocorrelation comparison
-    figures['acf'] = plot_acf_comparison(
-        evaluation_results['real_acf'], evaluation_results['gen_acf'], 
-        feature_idx=feature_indices[0], title='Autocorrelation Comparison'
-    )[0]
-    
-    # Cross-correlation comparison
-    figures['cross_corr'] = plot_cross_correlation_comparison(
-        evaluation_results['real_corr'], evaluation_results['gen_corr'],
-        title='Cross-Correlation Comparison'
-    )[0]
-    
-    # Volatility clustering comparison
-    figures['vol_clustering'] = plot_volatility_clustering(
-        evaluation_results['real_vol_acf'], evaluation_results['gen_vol_acf'],
-        feature_idx=feature_indices[0], title='Volatility Clustering Comparison'
-    )[0]
-    
+    for feature_idx in feature_indices:
+        figures[f'distribution_{feature_idx}'] = plot_distribution_comparison(
+            real_data, generated_data, feature_idx=feature_idx,
+            title=f'Distribution Comparison'
+        )[0]
+        figures[f'qq_plot_{feature_idx}'] = plot_qq_comparison(
+            real_data, generated_data, feature_idx=feature_idx,
+            title=f'Q-Q Plot Comparison'
+        )[0]
+
+        figures[f'acf_{feature_idx}'] = plot_acf_comparison(
+            evaluation_results['real_acf'], evaluation_results['gen_acf'],
+            feature_idx=feature_idx, title=f'Autocorrelation Comparison'
+        )[0]
+        
+        # Cross-correlation comparison with feature labels
+        figures[f'cross_corr_{feature_idx}'] = plot_cross_correlation_comparison(
+            evaluation_results['real_corr'], evaluation_results['gen_corr'],
+            title='Cross-Correlation Comparison',
+            data_index=feature_labels,
+            strikes=strikes,
+            maturities=maturities
+        )[0]
+        
+        figures[f'vol_clustering_{feature_idx}'] = plot_volatility_clustering(
+            evaluation_results['real_vol_acf'], evaluation_results['gen_vol_acf'],
+            feature_idx=feature_idx, title=f'Volatility Clustering Comparison'
+        )[0]
+
+        figures[f'empirical_cdf_{feature_idx}'] = plot_empirical_cdf(
+            real_data, generated_data, feature_idx=feature_idx, title=f'Empirical CDF Comparison'
+        )[0]
+        
     # Save dashboard plots if path is provided
     if save_path:
         for name, fig in figures.items():
