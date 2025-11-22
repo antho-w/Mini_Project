@@ -87,7 +87,7 @@ if __name__ == "__main__":
     LEARNING_RATE_DES = 3e-4 # 3e-4
     LEARNING_RATE_GEN = 5e-5 # 5e-5
     BETA_PARAM = 0.3 # 0.3
-    GENERATE_LENGTH = 252
+    GENERATE_LENGTH = 252 # 252
     RANDOM_SEED = 10
     # Gradient clipping parameters to reduce validation loss volatility
     GEN_GRAD_CLIP = 0.5  # Maximum norm for generator gradient clipping
@@ -669,7 +669,15 @@ if __name__ == "__main__":
             data_cache.load_implied_vols_from_data_dir(START_DATE, END_DATE)
         
         # Get dates for the data we're processing
-        dates_subset = data_cache.dates_list[:GENERATE_LENGTH] if hasattr(data_cache, 'dates_list') and len(data_cache.dates_list) >= GENERATE_LENGTH else []
+        # Verify that dates_list aligns with the implied_vols_array
+        if not hasattr(data_cache, 'dates_list') or len(data_cache.dates_list) == 0:
+            raise ValueError("data_cache.dates_list is not available or empty. Cannot determine dates for saved data.")
+        
+        if len(data_cache.dates_list) != len(data_cache.get_implied_vols_array()):
+            raise ValueError(f"Mismatch between dates_list length ({len(data_cache.dates_list)}) and implied_vols_array length ({len(data_cache.get_implied_vols_array())}). Dates may not align correctly.")
+        
+        dates_subset = data_cache.dates_list[:GENERATE_LENGTH]
+        logger.info(f"Using dates from {dates_subset[0]} to {dates_subset[-1]} for saved data (total: {len(dates_subset)} dates)")
         
         # Load underlying stock prices
         stock_data_path = os.path.join(DATA_DIR, f"{TICKER}_stock_data.csv")
@@ -741,18 +749,20 @@ if __name__ == "__main__":
         real_log_IV_reshaped = real_log_IV_subset  # Shape: (GENERATE_LENGTH, n_strikes, n_maturities)
         real_log_IV_df = pd.DataFrame(
             real_log_IV_reshaped.reshape(GENERATE_LENGTH, -1),
-            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES],
+            index=dates_subset
         )
-        real_log_IV_df.to_csv(os.path.join(real_data_dir, 'log_implied_vols.csv'), index=False)
+        real_log_IV_df.to_csv(os.path.join(real_data_dir, 'log_implied_vols.csv'), index=True)
         logger.info(f"Saved real log-IV data to {real_data_dir}/log_implied_vols.csv")
         
         # Transform real log-IVs to IVs (exponential)
         real_IVs = np.exp(real_log_IV_reshaped)  # Shape: (GENERATE_LENGTH, n_strikes, n_maturities)
         real_IV_df = pd.DataFrame(
             real_IVs.reshape(GENERATE_LENGTH, -1),
-            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES],
+            index=dates_subset
         )
-        real_IV_df.to_csv(os.path.join(real_data_dir, 'implied_vols.csv'), index=False)
+        real_IV_df.to_csv(os.path.join(real_data_dir, 'implied_vols.csv'), index=True)
         logger.info(f"Saved real IV data to {real_data_dir}/implied_vols.csv")
         
         # Verify real implied vols match input implied vols
@@ -807,9 +817,10 @@ if __name__ == "__main__":
         
         real_prices_df = pd.DataFrame(
             real_prices.reshape(GENERATE_LENGTH, -1),
-            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+            columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES],
+            index=dates_subset
         )
-        real_prices_df.to_csv(os.path.join(real_data_dir, 'option_prices.csv'), index=False)
+        real_prices_df.to_csv(os.path.join(real_data_dir, 'option_prices.csv'), index=True)
         logger.info(f"Saved real option prices to {real_data_dir}/option_prices.csv")
         
         # Process each model's generated data
@@ -820,18 +831,20 @@ if __name__ == "__main__":
             # Save generated log-IV data
             generated_log_IV_df = pd.DataFrame(
                 generated_log_IVs.reshape(GENERATE_LENGTH, -1),
-                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES],
+                index=dates_subset
             )
-            generated_log_IV_df.to_csv(os.path.join(model_generated_dir, 'log_implied_vols.csv'), index=False)
+            generated_log_IV_df.to_csv(os.path.join(model_generated_dir, 'log_implied_vols.csv'), index=True)
             logger.info(f"Saved {model_name} generated log-IV data to {model_generated_dir}/log_implied_vols.csv")
             
             # Transform generated log-IVs to IVs (exponential)
             generated_IVs = np.exp(generated_log_IVs)  # Shape: (GENERATE_LENGTH, n_strikes, n_maturities)
             generated_IV_df = pd.DataFrame(
                 generated_IVs.reshape(GENERATE_LENGTH, -1),
-                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES],
+                index=dates_subset
             )
-            generated_IV_df.to_csv(os.path.join(model_generated_dir, 'implied_vols.csv'), index=False)
+            generated_IV_df.to_csv(os.path.join(model_generated_dir, 'implied_vols.csv'), index=True)
             logger.info(f"Saved {model_name} generated IV data to {model_generated_dir}/implied_vols.csv")
             
             # Convert generated IVs to option prices using Black-Scholes
@@ -866,9 +879,10 @@ if __name__ == "__main__":
             
             generated_prices_df = pd.DataFrame(
                 generated_prices.reshape(GENERATE_LENGTH, -1),
-                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES]
+                columns=[f'strike_{s}_maturity_{m}' for s in STRIKES for m in MATURITIES],
+                index=dates_subset
             )
-            generated_prices_df.to_csv(os.path.join(model_generated_dir, 'option_prices.csv'), index=False)
+            generated_prices_df.to_csv(os.path.join(model_generated_dir, 'option_prices.csv'), index=True)
             logger.info(f"Saved {model_name} generated option prices to {model_generated_dir}/option_prices.csv")
         
         logger.info("Finished saving all data and calculating Black-Scholes prices.")
